@@ -1,0 +1,257 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+    <head>
+        <title>Easy Py Messaging: Distributed Systems for Raspberry Pi</title>
+        <script src="./javascript/toc.js" type="text/javascript"></script>
+        <link rel="stylesheet" href="css/article.css" type="text/css" />
+    </head>
+
+    <body onload="generateTOC(document.getElementById('toc'));">
+
+        <h1>Easy Py Messaging</h1>
+
+        <div id="toc"></div>
+
+
+        <h2>Features of Easy Py Messaging</h2>
+
+        <p><i>Easy Py Messaging</i> provides a small cross-platform python
+        coded toolkit for easy, reliable communications between nodes, within a
+        single desktop for multiple processes or just within a single process.
+        Just send a message and the API delivers your message.</p>
+
+        <p>Easy Py Messaging provides a wrapper around <a href="http://zeromq.org">ZeroMQ</a>
+        to implement a logger and an API for messaging.
+        Multiple additional utilites support the code.</p>
+
+        <p>With the use of this toolkit, developers can easily communicate
+        between thread in their code, between different processes and
+        even between different nodes on their network.</p>
+
+        <p>While this code was originally developed for the Raspberry Pi
+        running the Raspian OS, it has worked successfully on Mac OSX and
+        Linux Centos 7 systems. No attempt has been made for operation on
+        Windows.</p>
+
+        <h2>Feature Overview</h2>
+
+        <ul>
+
+            <li>Python API using the industry standard <a href="http://www.zeromq.org">ZeroMQ</a>
+            library. ZeroMQ has a proven track record for speed of
+            delivery and a robust API.</li>
+
+            <li>Asynchronous handling. Messages queues provide the ability to
+            fire-and-forget. For input, quering a messages queue may either
+            await a message or continue processing.</li>
+
+            <li>Robust messaging. ZeroMQ permits various processes to
+            go down while supplying recovery connections when the
+            processes restarts. Sorry, persistence is not currently
+            implemented.</li>
+
+            <li>Symmetrical connections. Messages use TCP for
+            bi-directional connections.</li>
+
+
+            <li>Multiple support utilties. These utilities support
+            your development and debugging efforts.</li>
+
+            <ul>
+
+                <li><a href="./easyMessagingTutorial.html">Easy Messaging</a>.
+                How to easily send and receive messages. These messages
+                may communicate with other threads, processes and
+                even other nodes - <i>easily</i>.
+
+                <li><a href="./logCollector.html">logCollector</a>. The primary tool for collecting
+                and storing logs.</li>
+
+                <li><a href="./logCollector.html#logCmd">logCmd</a>. Send logs and commands from the shell
+                command line.</li>
+
+                <li><a href="./logCollector.html#loggingLoopApp">loggingLoopApp</a>. Send a log message once a second
+                for debugging configurations.</li>
+
+                <li><a href="./logCollector.html#logFilterApp">logFilterApp</a>. Given a log file, extract relevant
+                information.</li>
+
+                <!--
+                <li>dirSvc. A directory naming service. Connect your
+                applications by name instead of port. This greatly
+                simplifies your configuation files.</li>
+                -->
+
+                <li><a
+                href="./logCollector.html#loggingSpeedTest">loggingSpeedTest:
+                </a>How fast does your system operate with your network
+                configuration?</li>
+
+            </ul>
+
+        </ul>
+
+        <h2>The Tools</h2>
+
+        <h3><a href="./logCollector.html">logCollector</a> - Collect the logs</h3>
+
+        <p>The <a href="./logCollector.html">logCollector</a>
+        documentation provides a thorough overview of log collection. A decent
+        logging system significantly eases development because it allows simple
+        tracking of information between various nodes and processes.</p>
+
+        <h3><a href="./logCollector.html#logFilterApp">logFilterApp</a> - analyze logs</h3>
+
+        <p>Once logs get written to a file, what happens? Log files can easily
+        get large and manually skimming them becomes boring and prone to
+        overlooking relevant information. logFilter provides elementary
+        processing and filtering of these log files.</p>
+
+        <h3><a href="./logCollector.html#loggingLoopApp">LoggingLoopApp</a> - loop testing configurations</h3>
+
+        <p>The loggingLoopApp gets used while developing applications.
+        It sends logs to the logger once per second and provides
+        feedback that the system for logs has a proper configuration.</p>
+
+        <h3><a href="./logCollector.html#loggingSpeedTest">loggingSpeedTest</a> - how fast can you communicate?</h3>
+
+        <p>How fast is your system? While speeds depend primarily
+        upon your network, this utility will send 100,000 logs
+        and report the time. What is yout timing for internal
+        only, connected with ethernet cables, wireless
+        connection?</p>
+
+        <!--
+        <h3><a href="./dirSvc.html">dirSvc</a> - Directory for Naming Servies</h3>
+
+        <p><a href="easy_naming_service">Easy Naming Service</a>
+        eases the configuration problems by supplying a symbolic
+        naming connection between various services in your
+        systems.</p>
+        -->
+
+
+        <h3>The Easy Messaging Utilties</h3>
+
+        <p>This package contains multiple utilities to enhance the
+        simple environment of the basic package.</p>
+
+        <h4><a href="./logCollector.html#logCmd">logCmd</a> - Command line messaging</h4>
+
+        <p>The basic code of <a href="./logCollector.html#logCmd">logCmd</a> displays the
+        ease of sending messages from an app. The additional command line
+        options turn this code into a powerful command line utility.
+        Interested developers could use this as the basis for a chat app.</p>
+
+        <!--
+        <h4><a href="./dirSvc.html">dirSvc</a> - The directory naming service</h4>
+
+        <p>A directory naming service allows much more flexible
+        configurations by using names for the various components
+        of your system instead of obscure items such as IP
+        addresses.</p>
+
+        <h4><a href="./dirClient.html">dirClient</a> - Interrogating the nameing service.</h4>
+
+        <p>This utility exercises the naming service. Useful for
+        checking out configurations in development.</p>
+        -->
+
+        <h4><a href="./logCollector.html#listening">listening</a> - Determing what process listens to a port</h4>
+
+        <p>This utility answers the frequent question found on various forums
+        "How do I find out which process is listening to a port?"
+        I didn't like the most of the answers, so I wrote this one. Enjoy.</p>
+
+        <p>In the process of developing and debugging your
+        systems, processes frequently continue to run while
+        listening to a port. Unless a utility such as
+        <a href="./logCollector.html#listening">listening</a> provides
+        a mapping between the port number and the process,
+        interpreting the "Address already in use" error message can prove
+        tricky.</p>
+
+        <h1>Glossary</h1>
+
+        <h2>Client/Server</h2>
+
+        <p>The terms of client and server describe which component
+        sends a message and which component receives a message.</p>
+
+        <p>Traditionally servers contain powerful computers or
+        processes dedicated to managing disk drives, printers
+        or network connections. Clients, on the other hand,
+        talk to server to obtain necessary information to
+        perform their operations.</p>
+
+        <p>In the Easy Py Messaging systems the use of client
+        and server does not necessarily hint at power, but of
+        sources and consumers of information.</p>
+
+        <h3>Servers as Resource Providers</h3>
+
+        <p>In Easy Py Messaging a server defines a source of
+        information that communicates with clients. A server
+        may exist on a separate node from a client or it may
+        run on the same node as a client or it may even
+        exist as a separate thread within the same process.</p>
+
+        <p>A server provides some kind of information or resource
+        within a system or distributed system. When a client
+        requests a resource, the server shares the resource
+        with the requesting client.</p>
+
+        <h3>Clients as Resource Consumers</h3>
+
+        <p>A client requests a service from a server.
+        Multiple clients may use a single server for resources.
+        A client may exist on the same hardware as a server
+        or may even run on the same process. Clients and servers
+        may also run on different hardware boxes. In this case
+        clients and servers typically talk to each other
+        through a network.</p>
+
+        <h3>Client/Server Discussion</h3>
+
+        <p>In the Easy Py Messaging model, messages typically start
+        with a client requesting a resource from some server.
+        A client sends a request to a server and the server
+        fulfills the request and generally responds with some
+        kind of acknowledgement.</p>
+        
+        <p>An application may use multiple clients and each client
+        will generally talk to different servers.</p>
+
+        <p>An Easy Py Messaging server can use multiple threads
+        for handling requests. Using multiple threads can provide
+        better performance.</p>
+
+        <p>Both clients and servers
+        have previosly agreed upon message structures.</p>
+
+        <p>An example of a client/server with the server
+        providing a response would be a node that request
+        instrument readings from a remote hardware box.
+        The client or requestor could be a desktop seeking
+        readings from a hydroponics controller in the backyard.
+        A single request on the desktop could cause the hydroponics
+        controller to response with all instrumentation sending
+        possibly multiple messages back to the desktop.</p>
+
+        <p>An example of a client using a resource without
+        a response would be the logging server. A client
+        simply calls the logger API with a message and the
+        logger silently records the log.</p>
+
+        <p>An example of a server initiating a discussion
+        could be the "ping" sometimes used to announce the
+        availability of the server's services. A "ping"
+        get broadcast on a known port with a known accouncement
+        structure. Interested processes would listen to this
+        port and record the existence of the service.</p>
+
+    </body>
+
+</html>
+
