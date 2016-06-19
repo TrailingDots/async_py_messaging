@@ -1,0 +1,23 @@
+2016-06-19T08:21:21.832	INFO	thru=INFO,level=INFO,using=REMOTE_LOG_LEVELS,host=brass
+2016-06-19T08:21:21.832	WARNING	thru=WARNING,level=WARNING,using=REMOTE_LOG_LEVELS,host=brass
+2016-06-19T08:21:21.833	WARNING	thru=CMD,level=CMD,using=REMOTE_LOG_LEVELS,host=brass
+2016-06-19T08:21:21.833	CRITICAL	thru=CRITICAL,level=CRITICAL,using=REMOTE_LOG_LEVELS,host=brass
+2016-06-19T08:21:21.833	ERROR	thru=ERROR,level=ERROR,using=REMOTE_LOG_LEVELS,host=brass
+2016-06-19T08:21:21.833	DEBUG	thru=DEBUG,level=DEBUG,using=REMOTE_LOG_LEVELS,host=brass
+2016-06-19T08:21:21.833	WARNING	type=client,msg=Warning,a=n,stuff=yuck,floor=ceiling,host=brass
+2016-06-19T08:21:21.833	ERROR	type=client,status=3,warn=continue,babble=yes,reason=testing,host=brass
+2016-06-19T08:21:21.834	DEBUG	type=client,msg=debug,details=yes,host=brass
+2016-06-19T08:21:21.834	CRITICAL	type=client,msg=critical,reason=meltdown,host=brass
+2016-06-19T08:21:21.834	INFO	type=client,status=1,msg=info,reason=nothing important,host=brass
+2016-06-19T08:21:21.834	INFO	type=logging,Does logging.info(), etc. still work?,host=brass
+2016-06-19T08:21:21.834	WARNING	type=logging,Once again - using pure logging.,host=brass
+2016-06-19T08:21:21.835	WARNING	type=logging,Notice no "host=..." on tagged onto the logs.,host=brass
+2016-06-19T08:21:21.835	WARNING	type=logging,msg=Warning,a=n,stuff=yuck,floor=ceiling,host=brass
+2016-06-19T08:21:21.835	ERROR	type=logging,status=3,warn=continue,babble=yes,reason=testing,host=brass
+2016-06-19T08:21:21.835	DEBUG	type=logging,msg=debug,details=yes,host=brass
+2016-06-19T08:21:21.835	CRITICAL	type=logging,msg=critical,reason=meltdown,host=brass
+2016-06-19T08:21:21.835	INFO	type=logging,status=1,msg=info,reason=nothing important,host=brass
+2016-06-19T08:21:21.836	DEBUG	debugging? Sending to logCollector?,host=brass
+2016-06-19T08:21:21.836	INFO	loggingClientTask: Done,host=brass
+2016-06-19T08:22:14.379	DEBUG	Testing log config in /tmp/6299.conf,host=brass
+2016-06-19T08:22:14.486	DEBUG	Another testing log config in /tmp/6299.conf,host=brass

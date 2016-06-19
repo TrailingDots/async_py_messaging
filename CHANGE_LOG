@@ -1,5 +1,11 @@
-Simple Log Messaging Change Log
+Async Python Messaging Change Log
 ===================================
+
+Version 1.1.0 - June 19, 2016
+------------------------------
+Started converting easy_py_messaging
+into the asynchronous version with
+MongoDB database logging.
 
 Version 1.0.0 - April 21, 2016
 ------------------------------
