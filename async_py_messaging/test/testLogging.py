@@ -608,6 +608,9 @@ class TestLogs2JSON(unittest.TestCase):
     def testLogs2JSON_HappyPath(self):
         print '\ntestLogs2JSON_HappyPath'
         testData = gen_happy_path()
+
+        #print 'testData:\n' + testData
+
         f = tempfile.NamedTemporaryFile(delete=True)
         f.write(testData)
         f.flush()
@@ -624,10 +627,8 @@ class TestLogs2JSON(unittest.TestCase):
         # Pretty print json
         py_internal = json.loads(json_data)
 
-        """
-        print json.dumps(py_internal, sort_keys=True, indent=4,
-                separators=(',', ':'))
-        """
+        #print json.dumps(py_internal, sort_keys=True, indent=4,
+        #        separators=(',', ':'))
 
         self.failUnless(py_internal[0]['level'] == 'DEBUG')
         self.failUnless(py_internal[0]['temp'] == '34.5')

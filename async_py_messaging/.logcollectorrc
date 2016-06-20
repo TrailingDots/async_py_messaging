@@ -5,7 +5,7 @@
     "mongo_port":  27017,       # MongoDB port
     "mongo_host":  "localhost", # Host for mongodb server
     "text":     True,           # True to write to <out_file>
-    "out_file": './logs.log',   # Name of text file output
+    "log_file": './logs.log',   # Name of text file output
     "noisy":    False,          # If true, logs echoed to stdout.
     "port":     5570,           # ZeroMQ logging port 
 }

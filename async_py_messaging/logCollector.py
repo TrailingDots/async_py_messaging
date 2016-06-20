@@ -6,10 +6,13 @@ import zmq
 import signal
 import atexit
 
+import pdb
+
 import logConfig
 import apiLoggerInit
 import utils
 import logComponents
+import log_mongo
 
 
 def exiting(exit_msg):
@@ -45,11 +48,13 @@ class LogCollectorTask(object):
     class should exist. The LogCollectorTask collects logs
     from the logging client task.
     """
-    def __init__(self, context, id_name):
+    def __init__(self, context, id_name, config):
         self.id_name = id_name
         self.context = context
         apiLoggerInit.loggerInit()
         self.frontend = self.context.socket(zmq.ROUTER)
+        self.config = config
+        self.mongo_client = log_mongo.LogMongo(self.config)
 
     def signal_handler(self, signum, frame):
         sys.stderr.write("logCollector terminated by signal %s" %
@@ -114,8 +119,16 @@ class LogCollectorTask(object):
                 # Don't log if level is too low compared to requested level.
                 if log_comp.level not in utils.filter_priority(logConfig.LOG_LEVEL):
                     continue
-                log_fcn = utils.LOG_LEVELS[log_comp.level]
-                log_fcn(log_comp.payload)
+
+                if self.config['mongo_database'] != '':
+                    # MongoDB logging. This MUST be in a CSV format
+                    # so it gets converted to JSON.
+                    self.mongo_client.log2mongo(ident, log_comp)
+
+                if str(self.config['text']).upper() == 'TRUE':
+                    # Text logging
+                    log_fcn = utils.LOG_LEVELS[log_comp.level]
+                    log_fcn(log_comp.payload)
 
         # Should never get here. This code stops with SIGINT or SIGTERM.
         self.frontend.close()
@@ -175,9 +188,9 @@ def usage(msg = ''):
     print 'logCollector [--log-file=logFilename] [port=<port#>] [-a] [-t]'
     print '     [--noisy] [--config=<config-filename>] '
     print '     [--format=JSON/TEXT]'
-    print '     [--mongo_database=<db_name>'
-    print '     [--mongo_port=<mongo port>'
-    print '     [--mongo_host=<mongo host>'
+    print '     [--mongo-database=<db_name>'
+    print '     [--mongo-port=<mongo port>'
+    print '     [--mongo-host=<mongo host>'
     print ''
     print '     --log-file=logFilename = name of file to place logs'
     print '         The default file if logs.log in the current dir'
@@ -189,13 +202,13 @@ def usage(msg = ''):
     print '     -a  Logs will be appended to logFilename. Default is append'
     print '     -t  logFilename will be truncated before writing logs.'
     print '     --format JSON|TEXT - what format? Default: TEXT. Also JSON available.'
-    print '     --mongo_database=db_name - Name of DB in Mongo to store logs'
+    print '     --mongo-database=db_name - Name of DB in Mongo to store logs'
     print '         Implies mongodb will store logs.'
     print '         Default: '' meaning NO use of MongoDB. Default output to a file.'
-    print '         The presence of a mongo_database name will stop logging'
+    print '         The presence of a mongo-database name will stop logging'
     print '         to a file'
-    print '     --mongo_port=<mongo daemon portrt> - Port of mongo daemon.'
-    print '     --mongo_host=<mongo daemon hostname> - host name of mongo daemon.'
+    print '     --mongo-port=<mongo daemon portrt> - Port of mongo daemon.'
+    print '     --mongo-host=<mongo daemon hostname> - host name of mongo daemon.'
     print '         Default: localhost'
     print ''
     print '-a and -t apply only when --file specifics a valid filename.'
@@ -219,10 +232,10 @@ def usage(msg = ''):
     print """Sample configuration file:
 cat .logcollectorrc
 {
-    "append":   True,           # Append to existing DB and/or <out_file>
+    "append":   True,           # Append to existing DB and/or <log_file>
     "format":   "JSON",         # Format of logs is JSON, else Text
-    "text":     True,           # True to write to <out_file>
-    "out_file": './logs.log',   # Name of text file output
+    "text":     True,           # True to write to <log_file>
+    "log_file": './logs.log',   # Name of text file output
     "noisy":    False,          # If true, logs echoed to stdout.
     "port":     5570,           # ZeroMQ logging port 
     "mongo_database":  "logs",  # MongoDB database name
@@ -249,7 +262,9 @@ def main():
              'quiet',       # NOT Noisy - messages not printed to console
              'trunc',       # Log file to be truncated
              'format=',     # Format of data: JSON or Text
-             'mongo_database=', # Database name for mongo.
+             'mongo-database=', # Database name for mongo.
+             'mongo-port=', # Database port for mongo.
+             'mongo-host=', # Database host for mongo.
              'help',        # help message
             ]
         )
@@ -266,11 +281,13 @@ def main():
     if config_dict is None:
         config_dict = {
             "append": True,          # Append logs to existing log file
-            "out_file": 'logs.log',  # Name of log file (could be absolute filename)
+            "log-file": 'logs.log',  # Name of log file (could be absolute filename)
             "port": 5570,            # Port to receive logs
             "noisy": False,          # Silent. Toggle with Ctrl-D
             "format": "TEXT",        # TEXT or JSON formatted logs.
-            "mongo_database": ''   # Name of MongoDB database
+            "mongo_database": '',    # Name of MongoDB database
+            "mongo_port": 27017,     # MongoDB Daemon default port
+            "mongo_host": "localhost", # MongoDB hostname
         }
 
     return_dict = {}        # User provided config dict - if any.
@@ -290,12 +307,12 @@ def main():
             config_dict['append'] = False
             continue
         elif opt in ['--log-file']:
-            config_dict['out_file'] = arg
+            config_dict['log_file'] = arg
             continue
         elif opt in ['--format']:
             config_dict['format'] = arg.upper()  # JSON or TEXT
             continue
-        elif opt in ['--mondgo_database']:
+        elif opt in ['--mongo-database']:
             config_dict['mongo_database'] = arg
             continue
         elif opt in ['--port']:
@@ -306,6 +323,14 @@ def main():
                 usage()
             config_dict['port'] = port
             continue
+        elif opt in ['--mongo-port']:
+            try:
+                port = int(arg)
+            except ValueError as err:
+                sys.stderr.write('Mongo Port must be numeric: %s\n' % str(err))
+                usage()
+            config_dict['mongo_port'] = port
+            continue
         elif opt in ['--config']:
             return_dict = load_config_file(arg)
             if not return_dict:
@@ -313,10 +338,11 @@ def main():
             # Set whatever values read from config file.
             # If not provided, use the defaults.
             config_dict['append']   = return_dict.get('append', config_dict['append'])
-            config_dict['out_file'] = return_dict.get('out_file', config_dict['out_file'])
+            config_dict['log_file'] = return_dict.get('log_file', config_dict['log_file'])
             config_dict['port']     = return_dict.get('port', config_dict['port'])
             config_dict['noisy']    = return_dict.get('noisy', config_dict['noisy'])
             config_dict['format']   = return_dict.get('format', config_dict['format']).upper()
+            config_dict['mongo_port'] = return_dict.get('mongo_port', config_dict['mongo_port'])
             if not (config_dict['format'] == 'JSON' or config_dict['format'] == 'TEXT'):
                 usage('"format" must be either "JSON" or "TEXT"')
             config_dict['mongo_database'] = \
@@ -332,7 +358,7 @@ def main():
         id_name = sys.argv[0]
 
     logConfig.APPEND_TO_LOG     = config_dict['append']
-    logConfig.LOG_FILENAME      = config_dict['out_file']
+    logConfig.LOG_FILENAME      = config_dict['log_file']
     logConfig.NOISY             = config_dict['noisy']
     logConfig.PORT              = config_dict['port']
     logConfig.FORMAT            = config_dict['format']
@@ -344,7 +370,7 @@ def main():
     print 'logCollector: pid %d, port %s' % (os.getpid(), str(logConfig.PORT))
 
     context = zmq.Context()
-    server = LogCollectorTask(context, id_name)
+    server = LogCollectorTask(context, id_name, config_dict)
     server.run()
 
 
