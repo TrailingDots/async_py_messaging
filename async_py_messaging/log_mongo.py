@@ -93,8 +93,8 @@ class LogMongo(object):
         for item in items:
             if len(item) == 0:
                 # Ignore empty items.
-                # An example:    name=value&&name1=value1
-                # The double '&&' results in an empty item.
+                # An example:    name=value,,name1=value1
+                # The double ',,' results in an empty item.
                 continue
             try:
                 if item.find('=') == -1:
@@ -107,6 +107,8 @@ class LogMongo(object):
                     # the last comma as a valid field.
                     item = 'text=' + item
                 key, value = item.split('=')
+                key = key.strip()
+                value = value.strip()
             except ValueError as err:
                 sys.stderr.write(('ERROR: "%s", "%s" payload: "%s"\n') %
                         (str(err), item, str(payload)))

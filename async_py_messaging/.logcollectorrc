@@ -1,6 +1,6 @@
 {
     "append":   True,           # Append to existing DB and/or <out_file>
-    "format":   "JSON",         # Format of logs is JSON, else Text
+    "format":   "TEXT",         # Format of logs is JSON, else Text
     "mongo_database": "logs",   # MongoDB database name
     "mongo_port":  27017,       # MongoDB port
     "mongo_host":  "localhost", # Host for mongodb server

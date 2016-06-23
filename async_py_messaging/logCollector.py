@@ -262,6 +262,7 @@ def main():
              'quiet',       # NOT Noisy - messages not printed to console
              'trunc',       # Log file to be truncated
              'format=',     # Format of data: JSON or Text
+             'text=',       # True to write text logs
              'mongo-database=', # Database name for mongo.
              'mongo-port=', # Database port for mongo.
              'mongo-host=', # Database host for mongo.
@@ -285,6 +286,7 @@ def main():
             "port": 5570,            # Port to receive logs
             "noisy": False,          # Silent. Toggle with Ctrl-D
             "format": "TEXT",        # TEXT or JSON formatted logs.
+            "text": True,            # True to write text logs
             "mongo_database": '',    # Name of MongoDB database
             "mongo_port": 27017,     # MongoDB Daemon default port
             "mongo_host": "localhost", # MongoDB hostname
@@ -315,6 +317,9 @@ def main():
         elif opt in ['--mongo-database']:
             config_dict['mongo_database'] = arg
             continue
+        elif opt in ['--text']:
+            config_dict['text'] = arg
+            continue
         elif opt in ['--port']:
             try:
                 port = int(arg)
@@ -342,6 +347,7 @@ def main():
             config_dict['port']     = return_dict.get('port', config_dict['port'])
             config_dict['noisy']    = return_dict.get('noisy', config_dict['noisy'])
             config_dict['format']   = return_dict.get('format', config_dict['format']).upper()
+            config_dict['text']   = return_dict.get('text', config_dict['text']).upper()
             config_dict['mongo_port'] = return_dict.get('mongo_port', config_dict['mongo_port'])
             if not (config_dict['format'] == 'JSON' or config_dict['format'] == 'TEXT'):
                 usage('"format" must be either "JSON" or "TEXT"')
@@ -362,6 +368,7 @@ def main():
     logConfig.NOISY             = config_dict['noisy']
     logConfig.PORT              = config_dict['port']
     logConfig.FORMAT            = config_dict['format']
+    logConfig.TEXT              = config_dict['text']
     logConfig.MONGO_DATABASE    = config_dict['mongo_database']
     logConfig.MONGO_PORT        = config_dict['mongo_port']
     logConfig.MONGO_HOST        = config_dict['mongo_host']

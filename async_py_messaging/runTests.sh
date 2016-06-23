@@ -639,6 +639,43 @@ CMD_PASS "coverage run --branch --parallel-mode $LIB_DIR/logCmd.py --port=5572 @
 
 CMD "$TOOLS_DIR/listening 5570 5571 5572 5573 5574 5575"
 
+ECHO "============================================================"
+ECHO "============================================================"
+ECHO "Start using mongodb for log storage"
+ECHO "============================================================"
+ECHO "============================================================"
+mongod &
+ret_code=$?
+if [ $ret_code -ne 100 ]
+then
+    ECHO "mongod already running"
+fi
+
+CMD "sleep 3"   # Let mongo get started
+CMD "mongo logs --eval 'db.logs.count()' "
+
+ECHO ""
+ECHO "Drop the entries in the log collection"
+mongo <<HERE
+use logs
+db.logs.drop()
+HERE
+CMD "mongo logs --eval 'db.logs.count()' "
+
+ECHO "Start logCollector with JSON format into database 'logs' "
+coverage run --branch --parallel-mode $LIB_DIR/logCollector.py --format=JSON --text=False --mongo_database=logs &
+CMD "sleep 3"
+
+ECHO "First - clear the logs in the MongoDB"
+mongo <<HERE
+use logs
+db.logs.drop()
+HERE
+
+ECHO "Send a simple message"
+CMD_PASS "./logCmd.py sw1=ON, pump02=OFF, light42=UNKNOWN"
+
+exit 99
 
 CMD "coverage combine  "
 CMD "coverage report -m "
