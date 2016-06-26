@@ -120,17 +120,17 @@ class LogCollectorTask(object):
                 if log_comp.level not in utils.filter_priority(logConfig.LOG_LEVEL):
                     continue
 
-                if self.config['mongo_database'] != '':
+                if self.config['mongo']:
                     # MongoDB logging. This MUST be in a CSV format
                     # so it gets converted to JSON.
                     self.mongo_client.log2mongo(ident, log_comp)
 
-                if str(self.config['text']).upper() == 'TRUE':
+                if self.config['text']:
                     # Text logging
                     log_fcn = utils.LOG_LEVELS[log_comp.level]
                     log_fcn(log_comp.payload)
 
-        # Should never get here. This code stops with SIGINT or SIGTERM.
+        # This code stops with @EXIT, SIGINT or SIGTERM.
         self.frontend.close()
         self.context.term()
 
@@ -188,6 +188,7 @@ def usage(msg = ''):
     print 'logCollector [--log-file=logFilename] [port=<port#>] [-a] [-t]'
     print '     [--noisy] [--config=<config-filename>] '
     print '     [--format=JSON/TEXT]'
+    print '     [--mongo=<True/False>'
     print '     [--mongo-database=<db_name>'
     print '     [--mongo-port=<mongo port>'
     print '     [--mongo-host=<mongo host>'
@@ -202,11 +203,11 @@ def usage(msg = ''):
     print '     -a  Logs will be appended to logFilename. Default is append'
     print '     -t  logFilename will be truncated before writing logs.'
     print '     --format JSON|TEXT - what format? Default: TEXT. Also JSON available.'
+    print '     --mongo=<True/False> - True = use MongoDB, False = do NOT use MongoDB'
+    print '         If False, ignore all other MongoDB settings.'
     print '     --mongo-database=db_name - Name of DB in Mongo to store logs'
-    print '         Implies mongodb will store logs.'
-    print '         Default: '' meaning NO use of MongoDB. Default output to a file.'
-    print '         The presence of a mongo-database name will stop logging'
-    print '         to a file'
+    print '         MongoDB will store logs.'
+    print '         Default: "logs" meaning MongoDB will use a database names "logs".'
     print '     --mongo-port=<mongo daemon portrt> - Port of mongo daemon.'
     print '     --mongo-host=<mongo daemon hostname> - host name of mongo daemon.'
     print '         Default: localhost'
@@ -238,6 +239,7 @@ cat .logcollectorrc
     "log_file": './logs.log',   # Name of text file output
     "noisy":    False,          # If true, logs echoed to stdout.
     "port":     5570,           # ZeroMQ logging port 
+    "mongo":    False,          # Do not use MongoDb. Ignore other Mongo settings.
     "mongo_database":  "logs",  # MongoDB database name
     "mongo_port": 27017,        # Mongodb daemon port
     "mongo_host": "localhost"   # Mongodb daemon hostname.
@@ -253,16 +255,18 @@ def main():
     atexit.register(exiting, 'Exiting logCollector')
 
     try:
-        opts, _ = getopt.gnu_getopt(
+        opts, args = getopt.gnu_getopt(
             sys.argv[1:], 'ahnqt',
             ['log-file=',   # output file instead of stdiout
              'port=',       # Port to listen for msgs. Default in logConfig.
              'config=',     # Config filename to load.
              'noisy',       # Noisy - messages printed to console as well as on a file.
+             'append=',     # Append or not. Default: True == append
              'quiet',       # NOT Noisy - messages not printed to console
              'trunc',       # Log file to be truncated
              'format=',     # Format of data: JSON or Text
-             'text=',       # True to write text logs
+             'text',        # Write text to logs
+             'mongo',       # Use MongoDB
              'mongo-database=', # Database name for mongo.
              'mongo-port=', # Database port for mongo.
              'mongo-host=', # Database host for mongo.
@@ -286,8 +290,9 @@ def main():
             "port": 5570,            # Port to receive logs
             "noisy": False,          # Silent. Toggle with Ctrl-D
             "format": "TEXT",        # TEXT or JSON formatted logs.
-            "text": True,            # True to write text logs
-            "mongo_database": '',    # Name of MongoDB database
+            "text": False,           # True to write text logs
+            "mongo": False,          # Name of MongoDB database
+            "mongo_database": 'logs',# Name of MongoDB database
             "mongo_port": 27017,     # MongoDB Daemon default port
             "mongo_host": "localhost", # MongoDB hostname
         }
@@ -296,8 +301,8 @@ def main():
     for opt, arg in opts:
         if opt in ['-h', '--help']:
             usage()
-        elif opt in ['-a']:
-            config_dict['append'] = True
+        elif opt in ['-a', '--append']:
+            config_dict['append'] = arg
             continue
         elif opt in ['-n', '--noisy']:
             config_dict['noisy'] = True
@@ -314,17 +319,20 @@ def main():
         elif opt in ['--format']:
             config_dict['format'] = arg.upper()  # JSON or TEXT
             continue
+        elif opt in ['--mongo']:
+            config_dict['mongo'] = True
+            continue
         elif opt in ['--mongo-database']:
             config_dict['mongo_database'] = arg
             continue
         elif opt in ['--text']:
-            config_dict['text'] = arg
+            config_dict['text'] = True
             continue
         elif opt in ['--port']:
             try:
                 port = int(arg)
             except ValueError as err:
-                sys.stderr.write('Port must be numeric: %s\n' % str(err))
+                sys.stderr.write('Logging Port must be numeric: %s\n' % str(err))
                 usage()
             config_dict['port'] = port
             continue
@@ -341,16 +349,45 @@ def main():
             if not return_dict:
                 usage()
             # Set whatever values read from config file.
-            # If not provided, use the defaults.
-            config_dict['append']   = return_dict.get('append', config_dict['append'])
+            # If none provided, use the defaults.
+            try:
+                abool = utils.bool_value_to_bool(return_dict.get(config_dict['append'], False))
+                config_dict['append']     = abool
+            except Exception as err:
+                print str(err)
+                sys.exit(1)
+
             config_dict['log_file'] = return_dict.get('log_file', config_dict['log_file'])
             config_dict['port']     = return_dict.get('port', config_dict['port'])
             config_dict['noisy']    = return_dict.get('noisy', config_dict['noisy'])
+
             config_dict['format']   = return_dict.get('format', config_dict['format']).upper()
-            config_dict['text']   = return_dict.get('text', config_dict['text']).upper()
-            config_dict['mongo_port'] = return_dict.get('mongo_port', config_dict['mongo_port'])
             if not (config_dict['format'] == 'JSON' or config_dict['format'] == 'TEXT'):
                 usage('"format" must be either "JSON" or "TEXT"')
+
+            try:
+                abool = utils.bool_value_to_bool(return_dict.get(config_dict['noisy'], False))
+                config_dict['noisy']     = abool
+            except Exception as err:
+                print str(err)
+                sys.exit(1)
+
+            try:
+                abool = utils.bool_value_to_bool(return_dict.get(config_dict['text'], False))
+                config_dict['text']     = abool
+            except Exception as err:
+                print str(err)
+                sys.exit(1)
+
+            try:
+                abool = utils.bool_value_to_bool(return_dict.get(config_dict['mongo'], False))
+                config_dict['mongo']    = abool
+            except Exception as err:
+                print str(err)
+                sys.exit(1)
+
+            config_dict['mongo_port'] = return_dict.get('mongo_port', config_dict['mongo_port'])
+
             config_dict['mongo_database'] = \
                     return_dict.get('mongo_database', config_dict['mongo_database'])
             continue
@@ -369,6 +406,7 @@ def main():
     logConfig.PORT              = config_dict['port']
     logConfig.FORMAT            = config_dict['format']
     logConfig.TEXT              = config_dict['text']
+    logConfig.MONGO             = config_dict['mongo']
     logConfig.MONGO_DATABASE    = config_dict['mongo_database']
     logConfig.MONGO_PORT        = config_dict['mongo_port']
     logConfig.MONGO_HOST        = config_dict['mongo_host']

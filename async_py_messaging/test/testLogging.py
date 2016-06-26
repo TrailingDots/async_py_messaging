@@ -124,7 +124,7 @@ class RunTests(unittest.TestCase):
         """
 
     @fcnName
-    def testLoggingSpeed(self):
+    def DO_NOT_USE_testLoggingSpeed(self):
         """How many messages per second?"""
         abs_path_server = os.path.abspath(logCollector.__file__)
         abs_path_app = os.path.abspath(loggingSpeedTest.__file__)

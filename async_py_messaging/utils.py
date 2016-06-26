@@ -175,3 +175,22 @@ def ISO8601_to_seconds(iso8601):
 
     return seconds
 
+
+def InvalidBooleanString(Exception):
+    pass
+
+def bool_value_to_bool(text_str):
+    """
+    Given a possible text_str, return the bool value.
+    This permits such shorthands to be True/False as:
+        True False Yes No T F 1 0
+    """
+    if type(text_str) == type(True):
+        return text_str # Nothing to do
+    text_str_upper = text_str.upper()
+    if text_str in ['TRUE', 'T', '1', 'YES', 'Y']:
+        return True
+    if text_str in ['False', 'F', '0', 'No', 'N']:
+        return False
+    raise InvalidBooleanString('Invalid boolean string: %s' % text_str)
+    

@@ -10,7 +10,6 @@ Parallel = True
 [report]
 ignore_errors = True
 omit=
-    genData.py
     /usr/lib/python2.7/*
 
 [html]

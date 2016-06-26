@@ -10,5 +10,6 @@ echo =========== All files ==============
             `find . -name '*.md'   | grep -v \.coverage_html` \
             `find . -name '*.sh'   | grep -v \.coverage_html`
 echo
-echo ========== Python files ==============
-/usr/bin/wc `find . -name '*.py'   | grep -v \.coverage_html` 
+echo ========== Python/Node.JS files ==============
+/usr/bin/wc `find . -name '*.py'   | grep -v \.coverage_html` \
+            `find . -name '*.js'   | grep -v \.coverage_html`

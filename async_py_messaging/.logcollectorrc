@@ -1,6 +1,7 @@
 {
     "append":   True,           # Append to existing DB and/or <out_file>
     "format":   "TEXT",         # Format of logs is JSON, else Text
+    'mongo':    False,          # Do not use MongoDB by default.
     "mongo_database": "logs",   # MongoDB database name
     "mongo_port":  27017,       # MongoDB port
     "mongo_host":  "localhost", # Host for mongodb server

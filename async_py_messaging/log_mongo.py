@@ -24,10 +24,11 @@ class LogMongo(object):
 {
     "append":   True,           # Append to existing DB and/or <out_file>
     "format":   "JSON",         # Format of logs is JSON, else Text
+    "mongo":    True            # Mongo is running
     "mongo_database": "logs",   # MongoDB database name
     "mongo_port":  27017,       # MongoDB port
     "mongo_host":  "localhost", # Host for mongodb server
-    "text":     True,           # True to write to <out_file>
+    "text":     False,           # True to write to <out_file>
     "log_file": './logs.log',   # Name of text file output
     "noisy":    False,          # If true, logs echoed to stdout.
     "port":     5570,           # ZeroMQ logging port 
@@ -41,10 +42,10 @@ class LogMongo(object):
     def __init__(self, config):
         self.use_mongo = False
         self.config = config
-        db_name = config['mongo_database']
-        if db_name == '':
+        if not config['mongo']:
             # No Mongo database name. Mongo is NOT used.
             return
+        db_name = config['mongo_database']
 
         # The interface to MongoDB requires a singleton
         if LogMongo.CLIENT is None:

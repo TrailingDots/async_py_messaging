@@ -1,5 +1,7 @@
 #!/bin/bash
-
+#
+# runTests.sh  [--test-speed]
+#   --test-speed  = Run speed tests.
 #
 # The following prerequesites must exist for proper
 # operations of this script:
@@ -54,6 +56,22 @@
 # Uncomment next two lines for debugging and tracing of this script.
 #set -x
 #PS4='$LINENO: '
+
+# Assume no speed tests
+TEST_SPEED=false
+
+for ndx in "$@"
+do
+    case $ndx in
+        --test_speed|--test)
+            TEST_SPEED=true
+            shift   # get past arg
+            ;;
+        *)
+            echo "Unknown option: \"$ndx\" "
+            exit 1
+    esac
+done
 
 # Start a timer for this entire script. The end produces a duration.
 SECONDS=0
@@ -141,7 +159,7 @@ ECHO "CPS=$CPS"
 export PYTHONPATH=$PYTHONPATH:$PWD
 ECHO "PYTHONPATH=$PYTHONPATH"
 
-./wc.sh     # How big is this getting?
+../wc.sh     # How big is this getting?
 
 export BASE_DIR=$PWD
 ECHO "BASE_DIR=$BASE_DIR"
@@ -279,30 +297,39 @@ CMD_PASS "coverage run --branch --parallel-mode $TOOLS_DIR/listeningPort.py --pr
 CMD_FAIL "coverage run --branch --parallel-mode $TOOLS_DIR/listeningPort.py --bogus 6666 "
 CMD_FAIL "coverage run --branch --parallel-mode $TOOLS_DIR/listeningPort.py bogus-port "
 
+
 ECHO "kill logCollector and restart with output to /dev/null for Speed test"
 CMD_PASS "coverage run --branch --parallel-mode $LIB_DIR/logCmd.py @EXIT "
 ECHO " coverage run --branch --parallel-mode $LIB_DIR/logCollector.py --log-file=/dev/null  " 
 $LIB_DIR/logCollector.py --log-file=/dev/null & 
-CMD_PASS "coverage run --branch --parallel-mode $LIB_DIR/loggingSpeedTest.py "
 
-ECHO "Speed test may keep the log collector busy for awhile."
-ECHO "Stop logCollector with /dev/null output, open again with echo"
-coverage run --branch --parallel-mode $LIB_DIR/logCmd.py @EXIT
+ECHO "Only run speed test if command line uses  --speed-test"
+if [ $TEST_SPEED = "true" ]
+then
 
-ECHO "Give time to stop collector. It may be backedup with speed logs."
-for await in `seq 1 30`
-do
-    CMD_PASS "sleep 1"
-    CMD_PASS "$TOOLS_DIR/listening 5570  5571 5572 5573 5574"
-    return_code=$?
-    echo return_code: $return_code
-    if [ $return_code -eq 0 ]
-    then
-        ECHO "Return code is $return_code"
-        break
-    fi
-done
+    CMD_PASS "coverage run --branch --parallel-mode $LIB_DIR/loggingSpeedTest.py "
 
+    ECHO "Speed test may keep the log collector busy for awhile."
+    ECHO "Stop logCollector with /dev/null output, open again with echo"
+    CMD_PASS "coverage run --branch --parallel-mode $LIB_DIR/logCmd.py @EXIT"
+    CMD "sleep 3"
+    ECHO "Give time to stop collector. It may be backedup with speed logs."
+    for await in `seq 1 30`
+    do
+        CMD_PASS "sleep 1"
+        CMD "$TOOLS_DIR/listening 5570  5571 5572 5573 5574"
+        return_code=$?
+        echo return_code: $return_code
+        if [ "$return_code" -eq "0" ]
+        then
+            ECHO "Return code is $return_code"
+            break
+        else
+            ECHO "Return code OK: $return_code"
+        fi
+    done
+
+fi
 
 ECHO "logCollector still going...? Should have been killed."
 CMD_PASS "$TOOLS_DIR/listening 5570  5571 5572 5573 5574"
@@ -663,7 +690,7 @@ HERE
 CMD "mongo logs --eval 'db.logs.count()' "
 
 ECHO "Start logCollector with JSON format into database 'logs' "
-coverage run --branch --parallel-mode $LIB_DIR/logCollector.py --format=JSON --text=False --mongo_database=logs &
+coverage run --branch --parallel-mode $LIB_DIR/logCollector.py --mongo --format=JSON --mongo-database=logs &
 CMD "sleep 3"
 
 ECHO "First - clear the logs in the MongoDB"
@@ -674,8 +701,15 @@ HERE
 
 ECHO "Send a simple message"
 CMD_PASS "./logCmd.py sw1=ON, pump02=OFF, light42=UNKNOWN"
+ECHO "=================== LOTS more on MongoDB =========="
 
-exit 99
+ECHO "Start server_create_test "
+server_create_test.py
+coverage run --branch --parallel-mode $LIB_DIR/server_create_test.py &
+
+ECHO "Perform timings"
+CMD_PASS "coverage run --branch --parallel-mode $LIB_DIR/client_create_test.py --timing"
+
 
 CMD "coverage combine  "
 CMD "coverage report -m "
