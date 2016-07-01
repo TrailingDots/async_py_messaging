@@ -102,6 +102,8 @@ ERROR_COUNT=0
 EXPECTED_PASS_BUT_FAIL=0
 EXPECTED_FAIL_BUT_PASS=0
 
+SLEEP=/usr/bin/sleep
+
 # function to echo command and then execute it.
 # Expect the command to pass with return code 0
 CMD_PASS () {
@@ -140,6 +142,26 @@ CMD_FAIL () {
 ECHO () {
     # BASH_LINENO is an array. Use the top of the stack == 0
     echo "ECHO ${BASH_LINENO[0]}: $*"
+}
+
+KILL_LOG_COLLECTOR() {
+    # This test script uses log collector at port 5570 only.
+    echo "KILL_LOG_COLLECTOR ${BASH_LINENO[0]} $*"
+    ./listening 5570
+    ret_code=$?
+    if [ $ret_code -ne 0 ]
+    then
+        CMD "./logCmd.py @EXIT"
+        CMD "$SLEEP 1"
+        # Test once again
+        ./listening 5570
+        ret_code=$?
+        if [ $ret_code -ne 0]
+        then
+            pid=$(./listening 5570 | awk '{print $2;}' )
+            kill -9 $pid
+        fi
+    fi
 }
 
 # Run various python metric utilities
@@ -188,21 +210,9 @@ rm $(find . -name '.coverge.*' -type f)
 ECHO Remove .coverage_html/*
 CMD "rm -rf .coverage_html"
 
-ECHO "Before starting, make sure the logCollector exists."
+ECHO "Before starting, make sure the logCollector is not running"
 CMD "$TOOLS_DIR/listening 5570 5571 5572 5573 5574 5575"
-if [ $? -ne 0 ]
-then
-    # Determine the pid holding this port. Then error out.
-    echo >&2
-    echo >&2 =============================================================================
-    echo >&2
-    echo >&2 Port 5570 is already instantiated. kill $($TOOLS_DIR/listeningPort.py --pid 5570)
-    echo >&2 $($TOOLS_DIR/listeningPort.py 5570)
-    echo >&2
-    echo >&2 =============================================================================
-    echo >&2
-    exit 1
-fi
+KILL_LOG_COLLECTOR
 
 #
 #
@@ -216,14 +226,14 @@ $GEN_DATA >$DATA_LOG    # CMD does not handle redirection properly.
 
 
 ECHO "================= Run client/server create_test ============"
-ECHO "First - some errors with server_create_test"
+ECHO "First - some errors with server_create_test. No messages will flow."
 CMD_FAIL "coverage run --branch --parallel-mode $LIB_DIR/server_create_test.py --help"
 CMD_FAIL "coverage run --branch --parallel-mode $LIB_DIR/server_create_test.py --port=XYZ"
 CMD_FAIL "coverage run --branch --parallel-mode $LIB_DIR/server_create_test.py --noisy --port=XYZ"
 CMD_FAIL "coverage run --branch --parallel-mode $LIB_DIR/server_create_test.py --BogusOption"
 
 ECHO ""
-ECHO "Start server_create_test"
+ECHO "Start server_create_test with messages flowing."
 ECHO "coverage run --branch --parallel-mode $LIB_DIR/server_create_test.py "
 coverage run --branch --parallel-mode $LIB_DIR/server_create_test.py &
 ECHO "server_create_test should have port 5590, the default port for this app"
@@ -253,21 +263,25 @@ CMD_PASS "coverage run --branch --parallel-mode $LIB_DIR/client_create_test.py G
 
 
 ECHO "=============== Run unit tests ================"
-ECHO "logCollector still going before testLogging.py ...\?"
+ECHO "logCollector still going before testLogging.py ?"
 CMD_PASS "coverage run --branch --parallel-mode $TOOLS_DIR/listeningPort.py "
 
 CMD_PASS "coverage run --branch --parallel-mode $TEST_DIR/testLogging.py "
 
-ECHO "logCollector still going after testLogging.py  ...\?"
+ECHO "Give time for logCollector to stop"
+CMD "$SLEEP 2"
+
+ECHO "logCollector still going after testLogging.py ?"
 CMD_PASS "coverage run --branch --parallel-mode $TOOLS_DIR/listeningPort.py 5570  5571 5572 5573 5574"
-echo "=============== End of unit tests ================"
+ECHO "=============== End of unit tests ================"
 
 
 ECHO "Need to get a timed alarm in case the collector does not start."
-ECHO "echo ====starting logCollector===="
+ECHO "echo ==== Starting logCollector ===="
 coverage run --branch --parallel-mode $LIB_DIR/logCollector.py &
 COL_PID=$!
-ps x | grep logCollector
+CMD "$SLEEP 2"  # Time to get log collector started
+ps ax | grep logCollector
 
 ECHO "the logCollector must be running in port 5570"
 CMD_PASS "coverage run --branch --parallel-mode $TOOLS_DIR/listeningPort.py 5570  5571 5572 5573 5574"
@@ -313,25 +327,11 @@ then
     ECHO "Stop logCollector with /dev/null output, open again with echo"
     CMD_PASS "coverage run --branch --parallel-mode $LIB_DIR/logCmd.py @EXIT"
     CMD "sleep 3"
-    ECHO "Give time to stop collector. It may be backedup with speed logs."
-    for await in `seq 1 30`
-    do
-        CMD_PASS "sleep 1"
-        CMD "$TOOLS_DIR/listening 5570  5571 5572 5573 5574"
-        return_code=$?
-        echo return_code: $return_code
-        if [ "$return_code" -eq "0" ]
-        then
-            ECHO "Return code is $return_code"
-            break
-        else
-            ECHO "Return code OK: $return_code"
-        fi
-    done
-
+    KILL_LOG_COLLECTOR
 fi
 
 ECHO "logCollector still going...? Should have been killed."
+KILL_LOG_COLLECTOR
 CMD_PASS "$TOOLS_DIR/listening 5570  5571 5572 5573 5574"
 
 coverage run --branch --parallel-mode $LIB_DIR/logCollector.py &
@@ -365,7 +365,7 @@ CMD_PASS "coverage run --branch --parallel-mode $LIB_DIR/apiLoggerInit.py "
 
 CMD_PASS "coverage run --branch --parallel-mode $LIB_DIR/apiLoggerInit.py "
 
-ECHO "logCollector still going...\?"
+ECHO "logCollector still going?"
 CMD_PASS "coverage run --branch --parallel-mode $TOOLS_DIR/listeningPort.py 5570  5571 5572 5573 5574"
 ECHO Multiple runs passing various flags both valid and bogus.
 CMD_PASS "coverage run --branch --parallel-mode $LIB_DIR/logFilterApp.py --in-file=$DATA_LOG --JSON "
@@ -502,7 +502,7 @@ CMD "$TOOLS_DIR/listeningPort.py 5570 5571 5572 5573 5574 5575"
 CMD_PASS "coverage run --branch --parallel-mode $LIB_DIR/dirClient.py --noisy @EXIT"
 CMD "$TOOLS_DIR/listeningPort.py 5570 5571 5572 5573 5574 5575"
 CMD_PASS "coverage run --branch --parallel-mode $LIB_DIR/logCmd.py @EXIT"
-
+KILL_LOG_COLLECTOR
 CMD "$TOOLS_DIR/listeningPort.py 5570 5571 5572 5573 5574 5575"
 
 
@@ -710,6 +710,10 @@ coverage run --branch --parallel-mode $LIB_DIR/server_create_test.py &
 ECHO "Perform timings"
 CMD_PASS "coverage run --branch --parallel-mode $LIB_DIR/client_create_test.py --timing"
 
+
+CMD "$SLEEP 1"
+ECHO "Kill logCollector if still running"
+KILL_LOG_COLLECTOR
 
 CMD "coverage combine  "
 CMD "coverage report -m "

@@ -2,7 +2,9 @@
 import zmq
 import sys
 import signal
-import server_create_class
+import async_server_create_class
+from random import randint
+import time
 
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 signal.signal(signal.SIGTERM, signal.SIG_DFL)
@@ -17,6 +19,8 @@ def handle_request(ident, msg):
     ident must *not* be changed.
     msg may become transformed into whatever.
     """
+    #time.sleep(randint(0, 4))
+    time.sleep(randint(0, 1))
     return ident, msg + '_resp'
 
 
@@ -83,7 +87,7 @@ def main():
 
     config = getopts(config)
 
-    server = server_create_class.ServerCreateClass(config)
+    server = async_server_create_class.AsyncServerCreateClass(config)
     server.start()
 
     while is_alive:
