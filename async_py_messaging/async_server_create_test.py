@@ -1,10 +1,12 @@
 #!/bin/env python
 import zmq
 import sys
+import os
 import signal
 import async_server_create_class
 from random import randint
 import time
+import debug
 
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 signal.signal(signal.SIGTERM, signal.SIG_DFL)
@@ -111,4 +113,6 @@ def main():
     return 0
 
 if __name__ == "__main__":
+    print '%s, pid: %d' % (' '.join(sys.argv), os.getpid())
+    debug.listen()      # Create trap for infinite loops with USR1
     sys.exit(main())

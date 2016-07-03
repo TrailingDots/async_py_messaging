@@ -31,6 +31,7 @@ import os
 import platform
 import time
 
+import debug
 import async_client_create_class
 
 import pdb
@@ -190,5 +191,7 @@ def main():
     return 0
 
 if __name__ == '__main__':
+    print '%s, pid: %d' % (' '.join(sys.argv), os.getpid())
+    debug.listen()  # For interrupting infinite loops with USR1
     sys.exit(main())
 

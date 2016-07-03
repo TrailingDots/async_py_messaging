@@ -241,45 +241,9 @@ CMD "$GEN_DATA >$DATA_LOG"
 $GEN_DATA >$DATA_LOG    # CMD does not handle redirection properly.
 
 
-ECHO "================= Run client/server create_test ============"
-ECHO "First - some errors with server_create_test. No messages will flow."
-CMD_FAIL "coverage run --branch --parallel-mode $LIB_DIR/server_create_test.py --help"
-CMD_FAIL "coverage run --branch --parallel-mode $LIB_DIR/server_create_test.py --port=XYZ"
-CMD_FAIL "coverage run --branch --parallel-mode $LIB_DIR/server_create_test.py --noisy --port=XYZ"
-CMD_FAIL "coverage run --branch --parallel-mode $LIB_DIR/server_create_test.py --BogusOption"
-
 
 ECHO "Kill async message server if running"
 CMD KILL_ASYNC_SERVER
-
-ECHO ""
-ECHO "Start server_create_test with messages flowing."
-ECHO "coverage run --branch --parallel-mode $LIB_DIR/server_create_test.py "
-coverage run --branch --parallel-mode $LIB_DIR/server_create_test.py &
-ECHO "server_create_test should have port 5590, the default port for this app"
-sleep 1
-CMD "$LIB_DIR/listening 5590"
-
-ECHO "Send some messages to server_create_test"
-ECHO "Using defaults from command line"
-CMD_PASS "coverage run --branch --parallel-mode $LIB_DIR/client_create_test.py This is a test"
-CMD_PASS "coverage run --branch --parallel-mode $LIB_DIR/client_create_test.py This is a test"
-CMD_PASS "coverage run --branch --parallel-mode $LIB_DIR/client_create_test.py --port=5590 This is another test"
-CMD_PASS "coverage run --branch --parallel-mode $LIB_DIR/client_create_test.py --port=5590 --node=localhost This is another test"
-# Is the following node 127.0.0.1 important?
-#CMD_PASS "coverage run --branch --parallel-mode $LIB_DIR/client_create_test.py --port=5590 --node=127.0.0.1 This is a localhost node"
-CMD_PASS "coverage run --branch --parallel-mode $LIB_DIR/client_create_test.py --port=5590 This is a localhost node"
-ECHO "The timing - slow..."
-CMD_PASS "coverage run --branch --parallel-mode $LIB_DIR/client_create_test.py --port=5590 --timing This is a localhost node"
-
-ECHO " Some failures - non-numeric port"
-CMD_FAIL "coverage run --branch --parallel-mode $LIB_DIR/client_create_test.py --port=XYZ This is another test"
-ECHO " Some failures - invalid option"
-CMD_FAIL "coverage run --branch --parallel-mode $LIB_DIR/client_create_test.py --foobar=XYZ This is another test"
-CMD_FAIL "coverage run --branch --parallel-mode $LIB_DIR/client_create_test.py --help"
-
-# Stop that server_create_test
-CMD_PASS "coverage run --branch --parallel-mode $LIB_DIR/client_create_test.py Get out of this program: @EXIT"
 
 
 ECHO "=============== Run unit tests ================"
@@ -723,13 +687,6 @@ ECHO "Send a simple message"
 CMD_PASS "./logCmd.py sw1=ON, pump02=OFF, light42=UNKNOWN"
 ECHO "=================== LOTS more on MongoDB =========="
 
-ECHO "Start server_create_test "
-server_create_test.py
-coverage run --branch --parallel-mode $LIB_DIR/server_create_test.py &
-
-ECHO "Perform timings"
-CMD_PASS "coverage run --branch --parallel-mode $LIB_DIR/client_create_test.py --timing"
-
 
 CMD "$SLEEP 1"
 ECHO "Kill logCollector if still running"
@@ -744,7 +701,9 @@ CMD_FAIL "coverage run --branch --parallel-mode $LIB_DIR/dbquery.py logs --port=
 
 ECHO ""
 ECHO "Simple queries"
-CMD_PASS "coverage run --branch --parallel-mode $LIB_DIR/dbquery.py logs db.logs.count\\(\\)"
+ECHO "Use CMD_PASS prefix with no double quotes"
+CMD_PASS coverage run --branch --parallel-mode $LIB_DIR/dbquery.py logs 'db.logs.count()'
+CMD_PASS coverage run --branch --parallel-mode $LIB_DIR/dbquery.py logs 'db.logs.find()'
 ECHO Without CMD but with coverage. Uses single quotes.
 coverage run --branch --parallel-mode $LIB_DIR/dbquery.py logs 'db.logs.count()'
 CMD coverage run --branch --parallel-mode $LIB_DIR/dbquery.py logs 'db.logs.count()'

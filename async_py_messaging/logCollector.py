@@ -22,7 +22,7 @@ def exiting(exit_msg):
 def signalUSR1Handler(signum, frame):
     """
     When a USR1 signal arrives, the NOISY debugging switch
-    get toggles. This allows a dynamic way to trace incoming
+    get toggled. This allows a dynamic way to trace incoming
     log messages.
         kill -USR1  1234    # 1234 is the pid of logCollector.
     """
@@ -252,6 +252,9 @@ def main():
     """main function"""
     import getopt
 
+    print '%s: pid %d, port %s' % (' '.join(sys.argv), 
+            os.getpid(), str(logConfig.PORT))
+
     atexit.register(exiting, 'Exiting logCollector')
 
     try:
@@ -411,8 +414,6 @@ def main():
     logConfig.MONGO_PORT        = config_dict['mongo_port']
     logConfig.MONGO_HOST        = config_dict['mongo_host']
 
-
-    print 'logCollector: pid %d, port %s' % (os.getpid(), str(logConfig.PORT))
 
     context = zmq.Context()
     server = LogCollectorTask(context, id_name, config_dict)

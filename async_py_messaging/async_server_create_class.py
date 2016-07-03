@@ -70,20 +70,30 @@ class AsyncServerCreateClass(threading.Thread):
         port = self.demandInt(self.config.get('port', DEFAULT_PORT))
         scheme = self.config.get('scheme', 'tcp')
         endpoint = '%s://*:%s' % (scheme, str(port))
-        sys.stdout.write('end: "%s" noisy=%s\n' % (endpoint, self.is_noisy))
+        sys.stdout.write('endpoint: "%s" noisy=%s\n' % 
+                (endpoint, self.is_noisy))
 
         try:
             frontend.bind(endpoint)
         except zmq.ZMQError as err:
             # Common problem: someone else using this port.
-            sys.stderr.write('Port %s: %s\n' %
+            sys.stderr.write('frontend Port %s: %s\n' %
                     (self.config['port'], str(err)))
             frontend.close()
             context.term()
             os.kill(os.getpid(), signal.SIGINT)
 
         backend = context.socket(zmq.DEALER)
-        backend.bind('inproc://backend')
+        try:
+            backend.bind('inproc://backend')
+        except zmq.ZMQError as err:
+            # Common problem: someone else using this port.
+            sys.stderr.write('backend Port %s: %s\n' %
+                    (self.config['port'], str(err)))
+            frontend.close()
+            backend.close()
+            context.term()
+            os.kill(os.getpid(), signal.SIGINT)
 
         self.config['context'] = context
 
