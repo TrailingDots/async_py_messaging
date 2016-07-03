@@ -164,6 +164,19 @@ KILL_LOG_COLLECTOR() {
     fi
 }
 
+KILL_ASYNC_SERVER() {
+    # Kill the async message server if it is running.
+    echo "KILL_ASYNC_SERVER ${BASH_LINENO[0]} $*"
+    CMD "./listening 5590"
+    RET=$?
+    if [ $RET -ne 0 ] 
+    then
+        kill $(./listening 5590 | awk '{print $2;}' )
+        sleep 1
+    fi
+}
+
+
 # Run various python metric utilities
 #CMD "pyflakes *.py"
 #CMD "pep8 *.py"
@@ -198,6 +211,9 @@ ECHO "TEST_DIR=$TEST_DIR"
 export DATA_DIR=$BASE_DIR/data
 ECHO "DATA_DIR=$DATA_DIR"
 
+export SCRIPTS_DIR=$BASE_DIR/scripts
+ECHO "SCRIPTS_DIR=$SCRIPTS_DIR"
+
 export GEN_DATA=$TEST_DIR/genData.py
 ECHO "GEN_DATA=$GEN_DATA"
 
@@ -231,6 +247,10 @@ CMD_FAIL "coverage run --branch --parallel-mode $LIB_DIR/server_create_test.py -
 CMD_FAIL "coverage run --branch --parallel-mode $LIB_DIR/server_create_test.py --port=XYZ"
 CMD_FAIL "coverage run --branch --parallel-mode $LIB_DIR/server_create_test.py --noisy --port=XYZ"
 CMD_FAIL "coverage run --branch --parallel-mode $LIB_DIR/server_create_test.py --BogusOption"
+
+
+ECHO "Kill async message server if running"
+CMD KILL_ASYNC_SERVER
 
 ECHO ""
 ECHO "Start server_create_test with messages flowing."
@@ -714,6 +734,31 @@ CMD_PASS "coverage run --branch --parallel-mode $LIB_DIR/client_create_test.py -
 CMD "$SLEEP 1"
 ECHO "Kill logCollector if still running"
 KILL_LOG_COLLECTOR
+
+ECHO ""
+ECHO '============ Testing dbquery ============'
+ECHO "Some error cases for dbquery"
+CMD_FAIL "coverage run --branch --parallel-mode $LIB_DIR/dbquery.py logs --config=$DATA_DIR/does-not-exist.conf "
+CMD_FAIL "coverage run --branch --parallel-mode $LIB_DIR/dbquery.py --help"
+CMD_FAIL "coverage run --branch --parallel-mode $LIB_DIR/dbquery.py logs --port=ABC"
+
+ECHO ""
+ECHO "Simple queries"
+CMD_PASS "coverage run --branch --parallel-mode $LIB_DIR/dbquery.py logs db.logs.count\\(\\)"
+ECHO Without CMD but with coverage. Uses single quotes.
+coverage run --branch --parallel-mode $LIB_DIR/dbquery.py logs 'db.logs.count()'
+CMD coverage run --branch --parallel-mode $LIB_DIR/dbquery.py logs 'db.logs.count()'
+ECHO "Insert some standard logs"
+mongo < $SCRIPTS_DIR/insertData.dat
+ECHO count Without CMD
+coverage run --branch --parallel-mode $LIB_DIR/dbquery.py logs 'db.logs.count()'
+ECHO "find first: Foo"
+coverage run --branch --parallel-mode $LIB_DIR/dbquery.py logs 'db.logs.find({"first":"Foo"})'
+ECHO Now with simple CMD in front
+CMD coverage run --branch --parallel-mode $LIB_DIR/dbquery.py logs 'db.logs.find({"first":"Foo"})'
+ECHO "A find first:Foo" without CMD
+coverage run --branch --parallel-mode $LIB_DIR/dbquery.py logs 'db.logs.find({"first":"Foo"})'
+
 
 CMD "coverage combine  "
 CMD "coverage report -m "

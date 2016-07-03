@@ -6,11 +6,12 @@
 # This exists because the shell add all kinds
 # of obscuring notation.
 #
-import pymongo
-import pdb
 import sys, os
+import pymongo
+import types
 import bson
 from pymongo import MongoClient
+import pdb
 
 
 def do_command(config_dict):
@@ -21,12 +22,12 @@ def do_command(config_dict):
 
 
 def print_results(results):
-    if type(results) == type(1):
+    if isinstance(results, types.IntType):
         print results
-    elif type(results) == type(bson.objectid.ObjectId()):
+    elif isinstance(results, type(bson.objectid.ObjectId())):
         # From an insert
         print results
-    elif type(results) == type({}):
+    elif isinstance(results, types.DictType):
         # From remove()
         print results
     else:
@@ -56,8 +57,10 @@ def usage():
                   quotes are double quotes. The bash shell demands this
                   or the string will yield strange results.
 
-    Sample query:
+    Sample queries:
         dbquery mydb 'db.test.find({"payload.middle": "Harry"})'
+        dbquery logs 'db.logs.find({"ident":"brass"})'
+        dbquery logs 'db.logs.count()'
     Searches the 'mydb' database for a record names 'payload'.
     That 'payload' record contains a sub-record named 'middle'
     and the specific record requred has a value of 'Harry'.
@@ -67,6 +70,10 @@ def usage():
 
     This utility does not handle such queries as 'show dbs' because
     only queries as 'db.coll.find(...)' are supported.
+
+    NOTE: This utility is NOT what you want to add or query for
+    large amounts of data! The intent was to fulfill requirements
+    for minor db queries - that's it!
 
     Return codes:
         0 = Success. The results get printed to sys.stdout.
@@ -99,7 +106,7 @@ def main():
         if opt in ['--help']:
             usage()     # Does not return
         elif opt in ['--port']:
-            config_dict['port'] = int(arg)
+            config_dict['port'] = arg
             continue
         elif opt in ['--host']:
             config_dict['host'] = arg

@@ -59,12 +59,12 @@ def getopts(config):
     import getopt
     try:
         opts, _ = getopt.gnu_getopt(
-                sys.argv[1:], '',
-                ['port=',       # Port to expect messages
-                 'node=',       # Node name of server_create_class.
-                 'timing',      # Run timing loop only
-                 'help',        # Help blurb
-                ])
+            sys.argv[1:], '',
+            ['port=',       # Port to expect messages
+             'node=',       # Node name of server_create_class.
+             'timing',      # Run timing loop only
+             'help',        # Help blurb
+            ])
     except getopt.GetoptError as err:
         print str(err)
         usage()

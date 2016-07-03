@@ -30,6 +30,7 @@ def usage():
     print '\t\t[--noisy]'
     print '\t--help         = This blurb'
     print '\t--port=aport   = Port to expect queries.'
+    print '\t--num-workers=#   = Numbers of workers.'
     print '\t--noisy        = Noisy reporting. Echo progress.'
     print ''
     sys.exit(1)
@@ -44,6 +45,7 @@ def getopts(config):
         opts, args = getopt.gnu_getopt(
                 sys.argv[1:], '',
                 ['port=',       # Port to expect messages
+                 'num-workers=', # Number of workers to process data
                  'noisy',       # If present, noisy trail for debug
                  'help',        # Help blurb
                 ])
@@ -67,6 +69,18 @@ def getopts(config):
             config['port'] = arg
             continue
 
+        elif opt in ['--num-workers']:
+            try:
+                # Insist on a valid integer for a port #
+                _ = int(arg)
+            except ValueError as err:
+                err_msg = 'Number workers: "%s", %s\n' % \
+                        (str(opt), str(err))
+                sys.stdout.write(err_msg)
+                usage()
+            config['num_workers'] = arg
+            continue
+
     return config
 
 is_alive = True
@@ -80,6 +94,7 @@ def main():
     config = {
         'scheme': 'tcp',
         'port': port,
+        'num_workers': 5,
         'in_fcn': handle_request,
         'id_name': platform.node(),
         'noisy': False,

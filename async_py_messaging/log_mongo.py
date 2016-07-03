@@ -18,7 +18,7 @@ class LogMongo(object):
     mongod must be started as:
         mongod --rest --config mongodb.conf
 
-    mongodb.conf uses the default config file.
+    mongodb.conf uses the mongo config file.
 
     The logCollector uses .logcollectorrc similar to:
 {

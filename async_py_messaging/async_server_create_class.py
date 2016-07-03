@@ -1,10 +1,16 @@
-#!/bin/env python
 import sys
 import os
 import threading
 import time
+import types
 import signal
 import zmq
+
+import pdb
+
+
+# Default port for receiving/sending messages.
+DEFAULT_PORT = 5590
 
 
 class AsyncServerCreateClass(threading.Thread):
@@ -24,40 +30,52 @@ class AsyncServerCreateClass(threading.Thread):
             of the log entry.
 
         port = port to use for communications.
+
+        num_workers = The number of workers to create.
+            A worker reads incoming messages,
+            calls the user specified routine and
+            passes the result of that routine
+            back to the caller.
         """
 
         super(AsyncServerCreateClass, self).__init__()
         self.config = config
-        self.workers = []   # Thread the workers are on.
+        self.workers = []   # Thread list of workers.
         self.is_noisy = self.config.get('noisy', False)
 
 
-    def demandIntPort(self):
-        """Insist that key be in the config dict.
-        Return the valid in the config dict."""
-        port = self.config.get('port', 5590)
+    def demandInt(self, value):
+        """
+        Return a valid int.
+        An invalid value results in an exception.
+        """
+        if isinstance(value, types.IntType):
+            # Already have a value, exit
+            return value
 
-        # Insist the key is an integer
+        # Insist value can convert to int
         try:
-            port = int(port)
+            value_int = int(value)
         except ValueError as err:
-            sys.stdout.write('port "%s" must be an integer. %s\n' %
-                    (str(port), str(err)))
-            sys.exit(1)
-        return port
+            err_msg = ('value "%s" must be an integer. %s\n' %
+                    (str(value), str(err)))
+            sys.stder.write(err_msg)
+            raise AsyncInvalidPort(err_msg)
+        return value_int
 
     def run(self):
+        global DEFAULT_PORT
         context = zmq.Context()
         frontend = context.socket(zmq.ROUTER)
-        port = self.demandIntPort()
+        port = self.demandInt(self.config.get('port', DEFAULT_PORT))
         scheme = self.config.get('scheme', 'tcp')
         endpoint = '%s://*:%s' % (scheme, str(port))
-        sys.stdout.write('endpoint: "%s" noisy=%s\n' % (endpoint, self.is_noisy))
+        sys.stdout.write('end: "%s" noisy=%s\n' % (endpoint, self.is_noisy))
 
         try:
             frontend.bind(endpoint)
         except zmq.ZMQError as err:
-            # Common problem: someone using this port.
+            # Common problem: someone else using this port.
             sys.stderr.write('Port %s: %s\n' %
                     (self.config['port'], str(err)))
             frontend.close()
@@ -70,7 +88,7 @@ class AsyncServerCreateClass(threading.Thread):
         self.config['context'] = context
 
         # Spawn some worker threads
-        for _ in range(20):
+        for _ in range(self.demandInt(self.config.get('num_workers', 5))):
             worker = AsyncServerWorker(self.config)
             worker.start()
             self.workers.append(worker)
@@ -91,7 +109,16 @@ is_alive = True
 
 
 class AsyncServerWorker(threading.Thread):
-    """AsyncServerWorker"""
+    """
+    AsyncServerWorker
+    Each individual worker waits for a messages,
+    calls the user specified routine to process the
+    messages, and sends a reply to the caller.
+
+    The architecture of ROUTER/DEALER in ZeroMQ
+    ensures workers receive messages in a round-robin
+    manner.
+    """
 
     def __init__(self, config):
         super(AsyncServerWorker, self).__init__()
@@ -111,7 +138,8 @@ class AsyncServerWorker(threading.Thread):
             except ValueError as err:
                 print str(err)
                 import pdb; pdb.set_trace()
-            if self.is_noisy: print 'recv ident: %s msg_id:%s msg: %s' %(ident, str(msg_id), msg)
+            if self.is_noisy: 
+                print 'recv ident: %s msg_id:%s msg: %s' %(ident, str(msg_id), msg)
 
             # Call the user defined function to handle the message.
             # The user defined function returns the response to be sent

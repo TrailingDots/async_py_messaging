@@ -1,0 +1,9 @@
+//
+// Insert some test data into mongodb
+//
+use logs
+db.logs.insert({'first': 'Amy', 'last': 'More'})
+db.logs.insert({'first': 'Foo', 'last': 'Number'})
+db.logs.insert({'first': 'Bar', 'last': 'Stuff'})
+db.logs.insert({'first': 'Foo', 'last': 'More
+

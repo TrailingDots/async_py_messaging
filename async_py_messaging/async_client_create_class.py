@@ -1,4 +1,4 @@
-#!/usr/binenv python
+#!/usr/env python
 #
 # Class that creates clients to send
 # messages and receive a response.

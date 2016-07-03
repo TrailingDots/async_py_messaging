@@ -7,6 +7,7 @@ import logging
 import datetime
 import time
 import signal
+import types
 
 
 class bcolors(object):
@@ -185,7 +186,7 @@ def bool_value_to_bool(text_str):
     This permits such shorthands to be True/False as:
         True False Yes No T F 1 0
     """
-    if type(text_str) == type(True):
+    if isinstance(text_str, types.BooleanType):
         return text_str # Nothing to do
     text_str_upper = text_str.upper()
     if text_str in ['TRUE', 'T', '1', 'YES', 'Y']:
