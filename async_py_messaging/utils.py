@@ -194,4 +194,51 @@ def bool_value_to_bool(text_str):
     if text_str in ['False', 'F', '0', 'No', 'N']:
         return False
     raise InvalidBooleanString('Invalid boolean string: %s' % text_str)
-    
+
+
+def load_config(config_filename=None):
+    """
+     Read the config file is any. Look in the current
+     directory for .logcollectorrc .
+     If not there, look in $HOME/.logcollectorrc
+     Any user flags will override config file settings.
+    """
+    def parse_config(file_handle):
+        # Got a config file. Load and return
+        config_lines = file_handle.read()
+        config_params = eval(config_lines)
+        return config_params
+
+    def try_to_load_config(filename):
+        try:
+            file_handle = open(filename, 'r')
+        except IOError:
+            return None
+        if file_handle:
+            return parse_config(file_handle)
+
+    dir_config = None
+    home_config = None
+    if config_filename is None:
+        config_filename = async_init.DEFAULT_CONFIG_FILE
+        dir_config = './' + config_filename
+        home_config = os.getenv('HOME') + '/' + config_filename
+    else:
+        # User provided config filename.
+        param_dict = try_to_load_config(config_filename)
+        return param_dict
+
+    param_dict = try_to_load_config(dir_config)
+    if param_dict is not None:
+        return param_dict
+
+    param_dict = try_to_load_config(home_config)
+    return param_dict
+
+
+def load_config_file(config_filename):
+    """
+    User has requested a specific configuration filename to be loaded.
+    """
+    return load_config(config_filename)
+

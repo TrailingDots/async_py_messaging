@@ -25,7 +25,6 @@ from easy_py_messaging import logFilter
 from easy_py_messaging import logConfig
 from easy_py_messaging import utils
 from easy_py_messaging import logCollector
-from easy_py_messaging import loggingSpeedTest
 from easy_py_messaging import loggingClientTask
 from easy_py_messaging import listeningPort
 
@@ -122,57 +121,6 @@ class RunTests(unittest.TestCase):
             print 'Testing:' + msg
             self.failUnless(msg in log_lines)
         """
-
-    @fcnName
-    def DO_NOT_USE_testLoggingSpeed(self):
-        """How many messages per second?"""
-        abs_path_server = os.path.abspath(logCollector.__file__)
-        abs_path_app = os.path.abspath(loggingSpeedTest.__file__)
-
-        log_filename = os.path.abspath('/dev/null')
-        print '***** log_filename:%s' % log_filename
-
-        # Remove existing log file
-        # Other tests will test for append mode.
-        if os.path.exists(log_filename) and os.path.isfile(log_filename):
-            os.remove(log_filename)
-
-        print 'starting collector'
-        argv_collector = ['python',
-                          abs_path_server,
-                          '--log-file', log_filename,
-                          '-t']
-        proc_collector = subprocess.Popen(argv_collector)
-        print ' '.join(argv_collector)
-        print (bcolors.BGGREEN +
-            ('proc_collector pid: %d' % proc_collector.pid) +
-            bcolors.ENDC)
-
-        # Allow the collector to start
-        time.sleep(1)
-
-        print bcolors.BGRED + 'starting speed app' + bcolors.ENDC + \
-                abs_path_app
-        speed_app_args = ['python', abs_path_app, '456']
-        speed_app = subprocess.Popen(speed_app_args)
-        print ' '.join(speed_app_args)
-        print (bcolors.BGGREEN +
-                ('speed_app pid: %d' % speed_app.pid) +
-                bcolors.ENDC)
-
-        # Allow some time to process.
-        # Since the speed tests sends 100,000 messages,
-        # The writes on the logCollector side may take
-        # some time to send these to a disk file.
-        # A possibly more accurate test would send the
-        # logs to /dev/null to eliminate I/O time.
-        seconds_to_sleep = 10
-        print '%d seconds to process subprocs' % seconds_to_sleep
-        time.sleep(seconds_to_sleep)
-
-        # Kill both processes
-        os.kill(speed_app.pid, signal.SIGINT)
-        os.kill(proc_collector.pid, signal.SIGINT)
 
 
 @fcnName

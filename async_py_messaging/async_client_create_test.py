@@ -1,4 +1,4 @@
-#!/usr/binenv python
+#!/usr/bin/env python
 #
 # Class that creates clients to send
 # async messages and async receive a response.

@@ -85,11 +85,9 @@ def getopts(config):
 
     return config
 
-is_alive = True
 
 def main():
     """main function"""
-    global is_alive
     import platform
     # Default port for this dummy test.
     port = 5590
@@ -107,8 +105,7 @@ def main():
     server = async_server_create_class.AsyncServerCreateClass(config)
     server.start()
 
-    while is_alive:
-        server.join(1)
+    server.join()
 
     return 0
 
