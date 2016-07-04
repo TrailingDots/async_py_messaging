@@ -220,7 +220,7 @@ def load_config(config_filename=None):
     dir_config = None
     home_config = None
     if config_filename is None:
-        config_filename = async_init.DEFAULT_CONFIG_FILE
+        config_filename = async_init.DEFAULT_ASYNC_CONFIG_FILE
         dir_config = './' + config_filename
         home_config = os.getenv('HOME') + '/' + config_filename
     else:
