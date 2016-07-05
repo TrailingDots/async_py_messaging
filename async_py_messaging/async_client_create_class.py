@@ -9,6 +9,7 @@ import zmq
 import threading
 import traceback
 import platform
+import time
 
 import pdb
 
@@ -65,6 +66,7 @@ class AsyncClientCreateClass(threading.Thread):
         self.context = None
         self.socket = None
         self.poll = None
+        self.poller = None
         self.reqs = 0       # Count of message requests
         threading.Thread.__init__(self)
 
@@ -91,9 +93,14 @@ class AsyncClientCreateClass(threading.Thread):
     def send_multipart(self, alist):
         """
         Send alist as frames
+        Contents:
+        alist[0] = The message id
+        alist[1] = The message payload. This may be arbitrarily
+            complex.
         """
         try:
             self.socket.send_multipart(alist)
+            self.sent_msg_id[alist[0]] = time.time()
         except zmq.ZMQError as err:
             sys.stderr.write('ERROR in send_multipart:%s\n' % err)
 
@@ -118,11 +125,16 @@ class AsyncClientCreateClass(threading.Thread):
         Return None if no messages,
         else return the message.
         """
-        socks_dict = dict(self.poller.poll(1))
+        socks_dict = dict(self.poller.poll())
 
         if self.socket in socks_dict:
             if socks_dict[self.socket] == zmq.POLLIN:
                 message = self.socket.recv_multipart()
+                response_id, payload = message
+                if response_id not in self.sent_msg_id:
+                    print 'Key error: ' % response_id
+                    pdb.set_trace()
+                del self.sent_msg_id[response_id]
                 return message
         return None
 

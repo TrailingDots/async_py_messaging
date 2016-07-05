@@ -3,11 +3,15 @@
   useful in multiple places.
 """
 import sys
+import os
 import logging
 import datetime
 import time
 import signal
 import types
+import platform
+
+import async_init
 
 
 class bcolors(object):
@@ -196,26 +200,49 @@ def bool_value_to_bool(text_str):
     raise InvalidBooleanString('Invalid boolean string: %s' % text_str)
 
 
-def load_config(config_filename=None):
+def load_config(config={}, config_filename=None):
     """
-     Read the config file is any. Look in the current
-     directory for .logcollectorrc .
-     If not there, look in $HOME/.logcollectorrc
+
+     Read the config file if any. Look in the current
+     directory for the default.
+     If not there, look in $HOME for the default config file.
+
+     Default values in config may become overridden by
+     the user config file. Set these befor calling.
+
+     When config gets passed in, values not supplied by
+     the input files will NOT become overwritten.
+
      Any user flags will override config file settings.
+
+     Apply user flags AFTER calling this routine.
+
+     The sequence is then:
+        config = { name=value, ...  User defaults ... }
+        config = load_config(config, <config_filename>)
+        config = getopt() # Overrrides for runtime flags
+
     """
     def parse_config(file_handle):
-        # Got a config file. Load and return
+        """
+        Got a config file_handle, load it into the config.
+        """
         config_lines = file_handle.read()
         config_params = eval(config_lines)
         return config_params
 
-    def try_to_load_config(filename):
+    def try_to_load_config(filename, config):
         try:
             file_handle = open(filename, 'r')
         except IOError:
             return None
         if file_handle:
-            return parse_config(file_handle)
+            local_config = parse_config(file_handle)
+            # Copy key=value to input config
+            for key, value in local_config.items():
+                config[key] = value
+            return config
+
 
     dir_config = None
     home_config = None
@@ -225,20 +252,14 @@ def load_config(config_filename=None):
         home_config = os.getenv('HOME') + '/' + config_filename
     else:
         # User provided config filename.
-        param_dict = try_to_load_config(config_filename)
+        param_dict = try_to_load_config(config_filename, config)
         return param_dict
 
-    param_dict = try_to_load_config(dir_config)
+    param_dict = try_to_load_config(dir_config, config)
     if param_dict is not None:
         return param_dict
 
     param_dict = try_to_load_config(home_config)
     return param_dict
 
-
-def load_config_file(config_filename):
-    """
-    User has requested a specific configuration filename to be loaded.
-    """
-    return load_config(config_filename)
 

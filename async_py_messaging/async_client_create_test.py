@@ -104,7 +104,16 @@ def getopts(config):
 
 def do_timings(client):
     """
-    Perform timings test
+    Perform timings test.
+    This provides a good example of how to handle
+    async messaging.
+    1. Send multiple message without waiting for a response.
+    2. Each sent messages gets tagged with an ID.
+       While the ID here is numeric, it could be any
+       unique string.
+    3. Poll for a response. Messages received may be
+       in any order since each message takes a
+       different processing time.
     """
     import timeit
     from time import time
@@ -114,7 +123,6 @@ def do_timings(client):
         ndx_str = str(ndx)
         data = 'ndx=%s' % ndx_str
         client.send_multipart([ndx_str, data])
-        client.sent_msg_id[ndx_str] = time()
         #print 'sent msg id ' + ndx_str
         response = client.do_poll()
         if response is not None:
@@ -126,6 +134,7 @@ def do_timings(client):
     # Wait for the remainder of messages.
     # The server may not have had time to process all of them.
     print 'All msgs sent. Size sent_msg_ndx: %d' % len(client.sent_msg_id)
+
     # For debugging, keep track of responses
     response_list = []
     while len(client.sent_msg_id) > 0:
@@ -184,8 +193,18 @@ def main():
     if config['timing']:
         do_timings(client)
     else:
-        response = client.send_multipart(['999999', config['message']])
-        sys.stdout.write(str(response) + '\n')
+        client.send_multipart(['123456', config['message']])
+
+        # Wait for a response!
+        # For async messaging, this is NOT normal.
+        response = None
+        while response is None:
+            response = client.do_poll()
+            if response is not None:
+                response_id, response_data = response
+                print 'id: %s, data: %s' % (response_id, response_data)
+                break
+
 
     client.join()
     return 0

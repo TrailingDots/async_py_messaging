@@ -1,0 +1,9 @@
+{
+    'scheme': 'tcp',
+    'num_workers': 10,
+    'message_timeout_check': 100,   # Max # message load before timeout checks
+    # 'in_fcn': handle_request,     # User cannot set here!
+    'id_name': platform.node(),
+    'noisy': True,                 # True to echo msgs to console. Use in debugging.
+}
+

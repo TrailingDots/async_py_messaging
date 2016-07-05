@@ -151,6 +151,12 @@ class AsyncServerWorker(threading.Thread):
             if self.is_noisy: 
                 print 'recv ident: %s msg_id:%s msg: %s' %(ident, str(msg_id), msg)
 
+                if '@EXIT' in msg:
+                    is_alive = False
+                    worker.send_multipart([ident, msg_id, '@EXIT'])
+                    time.sleep(1)   # Some time to send response.
+                    break
+
             # Call the user defined function to handle the message.
             # The user defined function returns the response to be sent
             # to the client.

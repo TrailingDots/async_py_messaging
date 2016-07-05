@@ -1,0 +1,50 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+    <head>
+        <title>Async Py Messaging Tutorial</title>
+        <script src="./javascript/toc.js" type="text/javascript"></script>
+        <link rel="stylesheet" href="css/article.css" type="text/css" />
+    </head>
+
+    <body onload="generateTOC(document.getElementById('toc'));">
+
+        <h1>Async Py Messaging Tutorial</h1>
+
+        <div id="toc"></div>
+
+        <h2>Isn't this reinventing the wheel?</h2>
+
+        <p>There is definitely an element of that. A good message broker (e.g.
+        <a href="http://www.rabbitmq.com/">RabbitMQ</a>) will do much of this,
+        and a purpose-built application such as <a
+        href="http://www.celeryproject.org/">Celery</a> will do much more, but
+        there are still good reasons to do this yourself:</p>
+
+        <ul>
+
+            <li><i>Exactly</i> fitted to your job. If you have a very specific
+            job it can be good to know exactly what's going on, especially when
+            it comes to debugging.</li>
+
+            <li>Flexibility. ZeroMQ is a more generic, lower-level way of
+            achieving a specific networking application, which means you have
+            to do a bit more yourself, and it also means you CAN do more
+            yourself.</li>
+
+            <li>Fewer components. You don't need more server applications
+            running and more configuration to worry about.</li>
+
+            <li>Learning how to do it yourself is fun! Get familiar with ZeroMQ
+            and you'll have a better understanding of how messaging systems are
+            built.</li>
+
+            <li>And finally: The amount of code a ZeroMQ application takes will
+            surprize you.  It is not a great deal more than a similar solution
+            using Celery.</li>
+
+        </ul>
+
+
+
+

@@ -8,6 +8,11 @@ from random import randint
 import time
 import debug
 
+import pdb
+
+import utils
+import async_init
+
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 signal.signal(signal.SIGTERM, signal.SIG_DFL)
 
@@ -40,7 +45,7 @@ def usage():
 
 def getopts(config):
     """
-    Read runtime options. Override defaults as necessary.
+        Read runtime options. Override defaults as necessary.
     """
     import getopt
     try:
@@ -89,17 +94,17 @@ def getopts(config):
 def main():
     """main function"""
     import platform
-    # Default port for this dummy test.
-    port = 5590
     config = {
         'scheme': 'tcp',
-        'port': port,
+        'port': async_init.DEFAULT_ASYNC_PORT,
         'num_workers': 5,
-        'in_fcn': handle_request,
+        'message_timeout_check': 100,   # Max # message load before timeout checks
+        'in_fcn': handle_request,       # Users MUST supply this!
         'id_name': platform.node(),
-        'noisy': False,
+        'noisy': False,                 # True to echo msgs to console. Use in debugging.
     }
 
+    config = utils.load_config(config)
     config = getopts(config)
 
     server = async_server_create_class.AsyncServerCreateClass(config)
