@@ -263,3 +263,22 @@ def load_config(config={}, config_filename=None):
     return param_dict
 
 
+def demand_int(value):
+    """
+    Return a valid int.
+    An invalid value results in an exception.
+    """
+    if isinstance(value, types.IntType):
+        # Already have a value, exit
+        return value
+
+    # Insist value can convert to int
+    try:
+        value_int = int(value)
+    except ValueError as err:
+        err_msg = ('value "%s" must be an integer. %s\n' %
+                (str(value), str(err)))
+        sys.stder.write(err_msg)
+        raise InvalidInteger(err_msg)
+    return value_int
+
