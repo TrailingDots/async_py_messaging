@@ -41,7 +41,7 @@ class TaskVent(object):
         self.sender.bind(self.endpoint_sender)
 
         # Socket with direct access to the sink:
-        # Use to synchronize start of batc(self.endpoint_sender)
+        # Use to synchronize start of batch (self.endpoint_sender)
 
         # Socket with direct access to the sink:
         # used to synchronize start of batch
@@ -49,14 +49,11 @@ class TaskVent(object):
         self.endpoint_sink = 'tcp://localhost:5558'
         self.sink.connect(self.endpoint_sink)
 
-    def process(self):
-        pass
-
-
 
 if __name__ == '__main__':
-    print 'Press Enter when the workers are ready'
-    _ = raw_input()
+    #print 'Press Enter when the workers are ready'
+    #_ = raw_input()
+
     config = {}
     task_vent = TaskVent(config)
 
@@ -75,7 +72,14 @@ if __name__ == '__main__':
         workload = task_nbr
         total_ms += workload
 
-        task_vent.sender.send_string(u'%i' % workload)
+        if task_nbr % 5 == 0:
+            print 'vent sending KILL to sink'
+            task_vent.sink.send_string('KILL')
+            continue
+
+        workload = 'workload-%i' % workload
+        task_vent.sender.send_string(workload)
+        print workload
 
     sys.stdout.write('Total expected cost: %s ms\n' % total_ms)
 

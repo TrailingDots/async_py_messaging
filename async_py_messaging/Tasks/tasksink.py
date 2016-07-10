@@ -23,26 +23,39 @@ class TaskSink(object):
         self.endpoint_controller = 'tcp://*:5559'
         self.controller.bind(self.endpoint_controller)
 
+        self.poller = zmq.Poller()
+        self.poller.register(self.receiver, zmq.POLLIN)
+        self.poller.register(self.controller, zmq.POLLIN)
+
 
     def process(self):
 
         # Wait for start of batch
-        self.receiver.recv()
+        # Blocks until 1st msg, ignored msg.
+        #msg = self.receiver.recv()
+        #print 'start: %s' % str(msg)
 
         # Start our clock now
         tstart = time.time()
 
-        # Process 100 confirmations
         task_nbr = 0
-        #for task_nbr in range(1, 25):
         while True:
             task_nbr += 1
-            msg = self.receiver.recv()
-            print str(msg)
+            socks = dict(self.poller.poll())
+            
+            print 'sink socks:' + str(socks)
 
-            if str(msg) == 'KILL':
-                print 'KILL received. task #%d' % task_nbr
-                break
+            if socks.get(self.reciever) == zmq.POLLIN:
+                msg = self.receiver.recv_string()
+                print str(msg)
+
+            """
+            if socks.get(self.controller) == zmq.POLLIN:
+                print str(msg)
+                if str(msg) == 'KILL':
+                    print 'sink KILL received. task #%d' % task_nbr
+                    break
+            """
 
             if task_nbr % 10 == 0:
                 sys.stdout.write(':')
@@ -58,7 +71,7 @@ class TaskSink(object):
 
         # Send kill signal to workers
         print 'sending KILL to workers'
-        self.controller.send(b'KILL')
+        self.controller.send('KILL')
 
         # finished
         self.receiver.close()

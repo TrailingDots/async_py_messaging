@@ -22,15 +22,15 @@ class TaskWork(object):
         self.receiver.connect(self.endpoint_recv)
 
         # Socket to send messages
-        self.endpoint_sender = 'tcp://localhost:5558'
-        self.sender = self.context.socket(zmq.PUSH)
-        self.sender.connect(self.endpoint_sender)
+        self.endpoint_to_sink = 'tcp://localhost:5558'
+        self.to_sink = self.context.socket(zmq.PUSH)
+        self.to_sink.connect(self.endpoint_to_sink)
 
         # Socket to control input
         self.controller = self.context.socket(zmq.SUB)
         self.endpoint_controller = 'tcp://localhost:5559'
         self.controller.connect(self.endpoint_controller)
-        self.controller.setsockopt(zmq.SUBSCRIBE, b'')
+        self.controller.setsockopt(zmq.SUBSCRIBE, '')
 
         self.poller = zmq.Poller()
         self.poller.register(self.receiver, zmq.POLLIN)
@@ -44,17 +44,18 @@ class TaskWork(object):
         while True:
             socks = dict(self.poller.poll())
 
+            print 'socks: %s' % str(socks)
+
             if socks.get(self.receiver) == zmq.POLLIN:
                 message = self.receiver.recv_string()
 
                 # Process task
                 print message
-                workload = int(message) # workload in ms
 
                 # Send results to sink
-                self.sender.send_string(message)
+                self.to_sink.send_string('work_to_sink: %s' % message)
 
-                # Simple progress indicator fo rthe viewer
+                # Simple progress indicator for the viewer
                 sys.stdout.write('.')
                 sys.stdout.flush()
 
@@ -66,7 +67,7 @@ class TaskWork(object):
 
         print ' Finished taskwork'
         self.receiver.close()
-        self.sender.close()
+        self.to_sink.close()
         self.controller.close()
         self.context.term()
         print 'all closed up'

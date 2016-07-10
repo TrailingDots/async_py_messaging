@@ -1,3 +1,4 @@
+# This project is under developement. PLEASE DO NOT USE!!
 
 # easy_py_messaging - version 1.0.0
 A simple to use python wrapper around ZeroMQ for distributed systems to use for messaging and logging. Especially targeted to Raspberry Pi systems.
