@@ -1,6 +1,6 @@
 # This project is under developement. PLEASE DO NOT USE!!
 
-# easy_py_messaging - version 1.0.0
+# async_py_messaging - version 1.0.0
 A simple to use python wrapper around ZeroMQ for distributed systems to use for messaging and logging. Especially targeted to Raspberry Pi systems.
 
 ## Welcome
@@ -30,7 +30,7 @@ monitoring and debugging problems with distributed systems.
 
 Installation consists of the normal:
 ``` bash
-git clone https://github.com/TrailingDots/easy_py_messaging.git
+git clone https://github.com/TrailingDots/async_py_messaging.git
 python setup.py install
 ```
 "sudo" may or may not be required depending upon your particular
@@ -39,11 +39,11 @@ system configuration.
 ## Documentation and Utilities
 
 The distribution provides extensive documentation. Refer to
-[Easy Py Messaging](./easy_py_messaging/docs/easy_py_messaging.html).
+[Async Py Messaging](./async_py_messaging/docs/async_py_messaging.html).
 
 
 ## Tutorial
-A tutorial: [Easy Py Messaging Tutorial](./easy_py_messaging/docs/easyMessagingTutorial.html).
+A tutorial: [Easy Py Messaging Tutorial](./async_py_messaging/docs/asyncMessagingTutorial.html).
 
 
 ## License
