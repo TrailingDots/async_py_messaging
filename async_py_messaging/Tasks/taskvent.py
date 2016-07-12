@@ -1,3 +1,4 @@
+#!/bin/env python
 # Ref: ZeroMQ, p. 17
 #
 # Bind PUSH socket to port 5557
@@ -64,8 +65,9 @@ if __name__ == '__main__':
     random.seed()
 
     # Send 100 tasks
+    max_msgs = 25
     total_ms = 0
-    for task_nbr in range(1, 100):
+    for task_nbr in range(1, max_msgs):
 
         # Random workload from to 100 ms
         #workload = random.randint(1, 100)

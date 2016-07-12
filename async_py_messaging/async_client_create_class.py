@@ -36,11 +36,12 @@ class AsyncClientCreateClass(threading.Thread):
                 For clients, this may be localhost or a node name.
 
         """
-        self.msg_id = 0         # use simple incrementing for unique msg_id
+        self.msg_id = 0  # simple incrementing for unique msg_id
 
         # Keep track of msgs send but no response
         # key = msg_id string, value = timestamp of sending
         self.sent_msg_id = {}   
+
 
         def demandKey(key, default):
             """
@@ -70,9 +71,30 @@ class AsyncClientCreateClass(threading.Thread):
         self.reqs = 0       # Count of message requests
         threading.Thread.__init__(self)
 
+
+    def add_to_sent_msg_id(self, msg_id):
+        """ Add msg_id to sent_msg_id dictionary """
+        sys.stdout.write('adding sent_msg_id: %s\n' % str(msg_id))
+        self.sent_msg_id[msg_id] = time.time()
+        print 'sent_msg_id: %s' % str(self.sent_msg_id)
+
+
+
+    def del_from_sent_msg_id(self, msg_id):
+        """ Delete msg_id from sent_msg_id dictionary """
+        try:
+            print 'del of %s' % str(msg_id)
+            del self.sent_msg_id[msg_id]
+        except KeyError as err:
+            print 'ERROR: del msg_id:%s' % str(err)
+            print 'sent_msg_id: %s' % str(self.sent_msg_id)
+            import pdb; pdb.set_trace()
+        
+
     def run(self):
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.DEALER)
+        self.socket.setsockopt(zmq.LINGER, 0)
         identity = u'%s' % str(self.id_name)
         self.socket.identity = identity.encode('ascii')
         app_socket = '%s://%s:%d' % (self.scheme, self.node, self.port)
@@ -100,7 +122,7 @@ class AsyncClientCreateClass(threading.Thread):
         """
         try:
             self.socket.send_multipart(alist)
-            self.sent_msg_id[alist[0]] = time.time()
+            self.add_to_sent_msg_id(alist[0])
         except zmq.ZMQError as err:
             sys.stderr.write('ERROR in send_multipart:%s\n' % err)
 
@@ -131,10 +153,7 @@ class AsyncClientCreateClass(threading.Thread):
             if socks_dict[self.socket] == zmq.POLLIN:
                 message = self.socket.recv_multipart()
                 response_id, payload = message
-                if response_id not in self.sent_msg_id:
-                    print 'Key error: ' % response_id
-                    pdb.set_trace()
-                del self.sent_msg_id[response_id]
+                self.del_from_sent_msg_id(response_id)
                 return message
         return None
 

@@ -1,3 +1,4 @@
+#!/bin/env python
 # Ref: ZeroMQ, p. 58, taskwork2.py in zguide
 
 import sys

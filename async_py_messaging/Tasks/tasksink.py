@@ -1,3 +1,4 @@
+#!/bin/env python
 # Ref: ZeroMQ, p. 60
 # Parallel task sink with kill signaling
 
@@ -25,7 +26,6 @@ class TaskSink(object):
 
         self.poller = zmq.Poller()
         self.poller.register(self.receiver, zmq.POLLIN)
-        self.poller.register(self.controller, zmq.POLLIN)
 
 
     def process(self):
@@ -45,17 +45,15 @@ class TaskSink(object):
             
             print 'sink socks:' + str(socks)
 
-            if socks.get(self.reciever) == zmq.POLLIN:
+            if socks.get(self.receiver) == zmq.POLLIN:
                 msg = self.receiver.recv_string()
                 print str(msg)
-
-            """
-            if socks.get(self.controller) == zmq.POLLIN:
-                print str(msg)
-                if str(msg) == 'KILL':
+                if 'KILL' in msg:
                     print 'sink KILL received. task #%d' % task_nbr
+                    # Send to all workers.
+                    self.controller.send_string('KILL')
+                    time.sleep(1)   # Time to send msgs
                     break
-            """
 
             if task_nbr % 10 == 0:
                 sys.stdout.write(':')

@@ -49,6 +49,7 @@ class AsyncServerCreateClass(threading.Thread):
         global DEFAULT_PORT
         context = zmq.Context()
         frontend = context.socket(zmq.ROUTER)
+        frontend.setsockopt(zmq.LINGER, 0)
         port = utils.demand_int(self.config.get('port', DEFAULT_PORT))
         scheme = self.config.get('scheme', 'tcp')
         endpoint = '%s://*:%s' % (scheme, str(port))
@@ -66,6 +67,7 @@ class AsyncServerCreateClass(threading.Thread):
             os.kill(os.getpid(), signal.SIGINT)
 
         backend = context.socket(zmq.DEALER)
+        backend.setsockopt(zmq.LINGER, 0)
         try:
             backend.bind('inproc://backend')
         except zmq.ZMQError as err:
@@ -81,7 +83,7 @@ class AsyncServerCreateClass(threading.Thread):
 
         # Spawn some worker threads
         #for _ in range(utils.demand_int(self.config.get('num_workers', 5))):
-        for worker_ndx in range(3):
+        for worker_ndx in range(5):
             worker = AsyncServerWorker(self.config, worker_ndx)
             worker.start()
             self.workers.append(worker)
@@ -134,10 +136,14 @@ class AsyncServerWorker(threading.Thread):
 
     def run(self):
         worker = self.context.socket(zmq.DEALER)
+        worker.setsockopt(zmq.LINGER, 0)
         worker.connect('inproc://backend')
 
         scheme = self.config.get('scheme', 'tcp')
+
         self.control_pub = self.context.socket(zmq.PUB)
+        self.control_pub.setsockopt(zmq.LINGER, 0)
+
         endpoint = 'inproc://control%d' % self.worker_ndx
 
         try:
@@ -155,6 +161,7 @@ class AsyncServerWorker(threading.Thread):
         self.control_sub = self.context.socket(zmq.SUB)
         try:
             self.control_sub.connect(endpoint)
+            self.control_sub.setsockopt(zmq.LINGER, 0)
         except zmq.ZMQError as err:
             sys.stderr.write('control connect endpoint: %s: %s\n' %
                     (endpoint, str(err)))
@@ -177,14 +184,14 @@ class AsyncServerWorker(threading.Thread):
 
             if self.is_noisy: 
                 print 'recv ident: %s msg_id:%s msg: %s' %(ident, str(msg_id), msg)
-            if '@EXIT' in msg:
-                #import pdb; pdb.set_trace()
-                self.control_pub.send_multipart([ident, msg_id, '@KILL@'])
-                print '@KILL@ published'
-                break
+
+            if '@EXIT@' in msg:
+                print 'stopping on @EXIT@'
 
             if '@KILL@' in msg:
-                break
+                #import pdb; pdb.set_trace()
+                print '@EXIT@ published'
+                self.control_pub.send_multipart([ident, msg_id, '@EXIT@'])
 
             # Call the user defined function to handle the message.
             # The user defined function returns the response to be sent
@@ -194,6 +201,9 @@ class AsyncServerWorker(threading.Thread):
             # Echo the msg id back to the client.
             worker.send_multipart([ident, msg_id, resp_msg])
             if self.is_noisy: print 'respond ident: %s msg: %s' %(ident, resp_msg)
+
+            if '@KILL' in msg:
+                break
 
         worker.close()
 

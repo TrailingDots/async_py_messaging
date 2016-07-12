@@ -30,6 +30,7 @@ import sys
 import os
 import platform
 import time
+import zmq
 
 import debug
 import async_client_create_class
@@ -117,19 +118,22 @@ def do_timings(client):
     """
     import timeit
     from time import time
+    import zmq
     iterations = 100     # send/recv this many messages
     start_time = timeit.default_timer()
     for ndx in range(1, iterations):
         ndx_str = str(ndx)
-        data = 'ndx=%s' % ndx_str
+        if ndx % 10 == 0:
+            data = '@KILL@'
+        else:
+            data = 'ndx=%s' % ndx_str
         client.send_multipart([ndx_str, data])
-        #print 'sent msg id ' + ndx_str
+        print 'sent msg id ' + ndx_str
         response = client.do_poll()
         if response is not None:
             response_ndx, response_data = response
             sys.stdout.write('len(sent_msg_id): %d, response: %s\n' %
                 (len(client.sent_msg_id), str(response)))
-            del client.sent_msg_id[response_ndx]
 
     # Wait for the remainder of messages.
     # The server may not have had time to process all of them.
@@ -145,8 +149,7 @@ def do_timings(client):
             response_list.append(response_id)
             if response_id not in client.sent_msg_id:
                 print 'Key error: ' % response_id
-                pdb.set_trace()
-            del client.sent_msg_id[response_id]
+            #del client.sent_msg_id[response_id]
 
     print 'All msgs recv. Size sent_msg_ndx: %d' % len(client.sent_msg_id)
     elapsed = timeit.default_timer() - start_time

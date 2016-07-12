@@ -27,7 +27,7 @@ def handle_request(ident, msg):
     msg may become transformed into whatever.
     """
     #time.sleep(randint(0, 4))
-    time.sleep(randint(0, 1))
+    #time.sleep(randint(0, 1))
     return ident, msg + '_resp'
 
 
